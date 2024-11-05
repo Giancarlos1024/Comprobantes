@@ -85,21 +85,22 @@ document.addEventListener('DOMContentLoaded', function() {
             // Agregar datos de cada fila del detalle
             let rows = document.querySelectorAll('#detalleBody tr');
             rows.forEach((row, index) => {
-                const codigoCuenta = row.querySelector('input[name="codigoCuenta[]"]').value || "";
-                const nombreCuenta = row.querySelector('input[name="nombreCuenta[]"]').value || "";
-                const debe = row.querySelector('input[name="debe[]"]').value || "0";
-                const haber = row.querySelector('input[name="haber[]"]').value || "0";
-                const descripcion = row.querySelector('input[name="descripcion[]"]').value || "";
-        
-                console.log(`Fila ${index}:`, { codigoCuenta, nombreCuenta, debe, haber, descripcion });
-        
-                // Solo agregar si hay un valor
-                if (codigoCuenta) formData.append(`codigoCuenta[]`, codigoCuenta);
-                if (nombreCuenta) formData.append(`nombreCuenta[]`, nombreCuenta);
-                if (debe) formData.append(`debe[]`, debe);
-                if (haber) formData.append(`haber[]`, haber);
-                if (descripcion) formData.append(`descripcion[]`, descripcion);
+                const codigoCuentaElement = row.querySelector('select[name="codigoCuenta[]"]');
+                const nombreCuentaElement = row.querySelector('select[name="nombreCuenta[]"]');
+                const debeElement = row.querySelector('input[name="debe[]"]');
+                const haberElement = row.querySelector('input[name="haber[]"]');
+                const descripcionElement = row.querySelector('input[name="descripcion[]"]');
+            
+                const codigoCuenta = codigoCuentaElement ? codigoCuentaElement.value : "";
+                const nombreCuenta = nombreCuentaElement ? nombreCuentaElement.value : "";
+                const debe = debeElement ? debeElement.value : "0";
+                const haber = haberElement ? haberElement.value : "0";
+                const descripcion = descripcionElement ? descripcionElement.value : "";
+            
+                console.log(`Fila ${index}: ${codigoCuenta}, ${nombreCuenta}, ${debe}, ${haber}, ${descripcion}`);
+                // Agregar cada valor al formData u objeto que estás usando para enviar
             });
+            
         
             formData.append('idUsuario', intIdUsuario); // Agregar ID de usuario
         
@@ -259,13 +260,19 @@ document.querySelector('#addRow').addEventListener('click', function() {
     let tableBody = document.querySelector('#detalleBody');
     let existingRows = tableBody.querySelectorAll('tr');
     
-    // Verifica que no haya más de un tipo de cuenta con el mismo código
     let newRow = document.createElement('tr');
-
     newRow.innerHTML = `
         <td>${existingRows.length + 1}</td>
-        <td><input type="text" name="codigoCuenta[]" class="form-control" placeholder="Código de Cuenta"></td>
-        <td><input type="text" name="nombreCuenta[]" class="form-control" placeholder="Nombre de Cuenta"></td>
+        <td>
+            <select name="codigoCuenta[]" class="form-control" id="codigoCuentaSelect${existingRows.length}" onchange="updateNombreCuenta(${existingRows.length})">
+                <option value="">Selecciona Código de Cuenta</option>
+            </select>
+        </td>
+        <td>
+            <select name="nombreCuenta[]" class="form-control" id="nombreCuentaSelect${existingRows.length}">
+                <option value="">Selecciona Nombre de Cuenta</option>
+            </select>
+        </td>
         <td><input type="number" name="debe[]" class="form-control" placeholder="Debe" step="0.01" oninput="updateTotals()"></td>
         <td><input type="number" name="haber[]" class="form-control" placeholder="Haber" step="0.01" oninput="updateTotals()"></td>
         <td><input type="text" name="descripcion[]" class="form-control" placeholder="Descripción"></td>
@@ -273,8 +280,10 @@ document.querySelector('#addRow').addEventListener('click', function() {
     `;
 
     tableBody.appendChild(newRow);
+    loadCuentaOptions(existingRows.length);
     updateTotals();
 });
+
 
 
 // Función para eliminar una fila
@@ -295,3 +304,45 @@ function updateTotals() {
     document.querySelector('#totalDebe').innerText = totalDebe.toFixed(2);
     document.querySelector('#totalHaber').innerText = totalHaber.toFixed(2);
 }
+
+
+function loadCuentaOptions(rowIndex) {
+    fetch('http://localhost/contaxmvcfin/Comprobantes/getPlanCuentas') // Cambia a la ruta correspondiente en tu proyecto
+        .then(response => response.json())
+        .then(data => {
+            let codigoSelect = document.getElementById(`codigoCuentaSelect${rowIndex}`);
+            let nombreSelect = document.getElementById(`nombreCuentaSelect${rowIndex}`);
+            
+            data.forEach(cuenta => {
+                let codigoOption = document.createElement('option');
+                codigoOption.value = cuenta.codigocuenta;
+                codigoOption.text = cuenta.codigocuenta;
+                codigoSelect.appendChild(codigoOption);
+            
+                let nombreOption = document.createElement('option');
+                nombreOption.value = cuenta.nombrecuenta;
+                nombreOption.text = cuenta.nombrecuenta;
+                nombreSelect.appendChild(nombreOption);
+            });
+        })
+        .catch(error => console.error('Error al cargar cuentas:', error));
+}
+
+function updateNombreCuenta(rowIndex) {
+    let codigoSelect = document.getElementById(`codigoCuentaSelect${rowIndex}`);
+    let nombreSelect = document.getElementById(`nombreCuentaSelect${rowIndex}`);
+    let selectedCodigo = codigoSelect.value;
+
+    fetch('http://localhost/contaxmvcfin/Comprobantes/getPlanCuentas')
+        .then(response => response.json())
+        .then(data => {
+            const cuenta = data.find(item => item.codigocuenta === selectedCodigo);
+            if (cuenta) {
+                nombreSelect.value = cuenta.nombrecuenta;
+            } else {
+                nombreSelect.value = '';
+            }
+        })
+        .catch(error => console.error('Error al actualizar nombre de cuenta:', error));
+}
+

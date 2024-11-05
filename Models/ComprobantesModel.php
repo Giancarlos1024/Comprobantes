@@ -20,11 +20,8 @@ class ComprobantesModel extends Mysql
             // Verifica si el número de asiento ya existe
             $sql = "SELECT * FROM conceptooperacion WHERE numeroasiento = ?";
             $request = $this->select_all($sql, [$numeroAsiento]);
-    
-            // Log para verificar la consulta anterior
             error_log("Consulta para verificar existencia de asiento: " . $sql . " | Parámetros: " . json_encode([$numeroAsiento]));
             error_log("Resultado de la verificación de existencia: " . json_encode($request));
-    
             if (empty($request)) {
                 // Inserta en conceptooperacion
                 $query_insert = "INSERT INTO conceptooperacion (numeroasiento, fechaAsiento, conceptoOperacion, tipocomprobante, estadotransaccion, idUsuarios, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -37,11 +34,7 @@ class ComprobantesModel extends Mysql
                     $idUsuarios,
                     $status
                 );
-    
-                // Log para verificar la consulta de inserción
                 error_log("Consulta de inserción en conceptooperacion: " . $query_insert . " | Parámetros: " . json_encode($arrData));
-    
-                // Aquí verificamos el resultado de la inserción
                 $request_insert = $this->insert($query_insert, $arrData);
     
                 // Captura el ID del último comprobante insertado
@@ -65,15 +58,11 @@ class ComprobantesModel extends Mysql
             return ["status" => false, "message" => "Error: " . $e->getMessage()];
         }
     }
-    
-    
     public function getLastId() {
         try {
             $query = "SELECT MAX(idAsiento) AS last_id FROM conceptooperacion";
             $result = $this->conexion->query($query);
             $lastId = $result->fetchColumn(); // Devuelve directamente la columna
-    
-            // Log para ver el último ID obtenido
             error_log("Último ID obtenido en getLastId: " . $lastId);
             return $lastId;
         } catch (PDOException $e) {
@@ -81,15 +70,11 @@ class ComprobantesModel extends Mysql
             return null; // O maneja el error según sea necesario
         }
     }
-    
     public function getOrInsertCuenta(int $codigoCuenta, string $nombreCuenta, int $idUsuario) {
         try {
             error_log("Parámetros recibidos en getOrInsertCuenta: codigoCuenta = $codigoCuenta, nombreCuenta = $nombreCuenta, idUsuario = $idUsuario");
-    
             $sql = "SELECT idCcontables FROM plancuentas WHERE codigocuenta = ?";
             $request = $this->select($sql, [$codigoCuenta]);
-    
-            // Log para verificar la consulta
             error_log("Consulta para verificar cuenta existente: " . $sql . " | Parámetros: " . json_encode([$codigoCuenta]));
     
             if (!empty($request)) {
@@ -119,26 +104,18 @@ class ComprobantesModel extends Mysql
             return ["status" => false, "message" => "Error en la base de datos: " . $e->getMessage()];
         }
     }
-    
     public function insertDetalleLidiario(int $idAsiento, int $idCcontables, float $debe, float $haber, string $descripcion, int $idUsuario) {
         try {
-            // Define las variables para el estado y el status
             $estado = 1; // Activo
             $status = 1; // Activo
-    
             error_log("Parámetros recibidos en insertDetalleLidiario: idAsiento = $idAsiento, idCcontables = $idCcontables, debe = $debe, haber = $haber, descripcion = $descripcion, idUsuario = $idUsuario, status=$status");
     
             $query_insert = "INSERT INTO lidiario 
                                 (idAsiento, idCcontables, debe, haber, descripcion, estado, fechacreacion, fechaactualizado, idUsuario, status) 
                              VALUES 
                                 (?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?)";
-    
-            // Usa las variables en lugar de números mágicos
             $arrData = array($idAsiento, $idCcontables, $debe, $haber, $descripcion, $estado, $idUsuario, $status);
-    
-            // Log para verificar la consulta de inserción
             error_log("Consulta de inserción en lidiario: " . $query_insert . " | Parámetros: " . json_encode($arrData));
-    
             $request_insert = $this->insert($query_insert, $arrData);
             
             if ($request_insert) {
@@ -153,14 +130,18 @@ class ComprobantesModel extends Mysql
             return ["status" => false, "message" => "Error en la base de datos: " . $e->getMessage()];
         }
     }
-    
-
     public function selectComprobantes()
     {
         $sql = "SELECT * FROM conceptooperacion WHERE status != 0";
         $request = $this->select_all($sql);
         return $request;
     }
+    public function selectPlanCuentas() {
+        $sql = "SELECT codigocuenta, nombrecuenta FROM plancuentas";
+        return $this->select_all($sql);
+    }
+    
+
     public function selectComprobante(int $idAsiento)
     {
         $this->intIdAsiento = $idAsiento;
@@ -192,7 +173,6 @@ class ComprobantesModel extends Mysql
             $query_update = "UPDATE conceptooperacion SET numeroasiento = ?, fechaAsiento = ?, conceptoOperacion = ?, tipocomprobante = ?, estadotransaccion = ?, idUsuarios = ? WHERE idAsiento = ?";
             $arrData = array($numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios, $idAsiento);
             $request_update = $this->update($query_update, $arrData);
-            
             if ($request_update) {
                 return ["status" => true, "message" => "Comprobante actualizado correctamente."];
             } else {
@@ -202,7 +182,6 @@ class ComprobantesModel extends Mysql
             return ["status" => false, "message" => "Error: " . $e->getMessage()];
         }
     }
-
     public function deleteComprobante(int $idAsiento)
     {
         $this->intIdAsiento = $idAsiento;

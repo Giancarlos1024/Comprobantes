@@ -155,7 +155,6 @@ class Comprobantes extends Controllers
 		die();
 	}
 	public function setComprobante() {
-		// Validación de campos requeridos
 		$requiredFields = ['txtNumeroAsiento', 'txtFechaAsiento', 'listComprobante', 'listStatus', 'txtConceptoOperacion', 'idUsuario'];
 		foreach ($requiredFields as $field) {
 			if (empty($_POST[$field])) {
@@ -163,7 +162,6 @@ class Comprobantes extends Controllers
 				die();
 			}
 		}
-	
 		$strNumeroAsiento = strClean($_POST['txtNumeroAsiento']);
 		$strFechaAsiento = strClean($_POST['txtFechaAsiento']);
 		$strConceptoOperacion = strClean($_POST['txtConceptoOperacion']);
@@ -172,7 +170,6 @@ class Comprobantes extends Controllers
 		$intIdUsuario = intval($_POST['idUsuario']);
 		$status = 1; // O cualquier otro valor que necesites
 		error_log("Datos recibidos: " . json_encode($_POST));
-	
 		$insertResponse = $this->model->insertComprobante(
 			$strNumeroAsiento,
 			$strFechaAsiento,
@@ -182,7 +179,6 @@ class Comprobantes extends Controllers
 			$intIdUsuario,
 			$status 
 		);
-	
 		if ($insertResponse['status'] && isset($insertResponse['idAsiento'])) {
 			$idAsiento = $insertResponse['idAsiento'];
 	
@@ -206,11 +202,8 @@ class Comprobantes extends Controllers
 					}
 				}
 			}
-	
-			// Crear la respuesta JSON para la inserción exitosa
 			$response = ["status" => true, "idAsiento" => $idAsiento, "message" => "Comprobante insertado correctamente."];
 			error_log("Respuesta JSON a enviar: " . json_encode($response));
-			
 			ob_clean(); // Limpiar el buffer para evitar salida previa
 			echo json_encode($response); // Enviar respuesta JSON
 		} else {
@@ -218,8 +211,12 @@ class Comprobantes extends Controllers
 			echo json_encode(array("status" => false, "msg" => $insertResponse['message']));
 		}
 	}
-	
-	
+
+	public function getPlanCuentas() {
+		$arrData = $this->model->selectPlanCuentas();
+		echo json_encode($arrData, JSON_UNESCAPED_UNICODE);
+		die();
+	}
 	
 	public function setUpdateComprobante()
 	{
@@ -232,7 +229,6 @@ class Comprobantes extends Controllers
 					die();
 				}
 			}
-	
 			$idAsiento = intval($_POST['idAsiento']);
 			$strNumeroAsiento = strClean($_POST['txtNumeroAsiento']);
 			$strFechaAsiento = strClean($_POST['txtFechaAsiento']);
@@ -241,7 +237,6 @@ class Comprobantes extends Controllers
 			$intEstadoTransaccion = intval($_POST['listStatus']);
 			$intIdUsuario = intval($_POST['idUsuario']);
 			$updateResponse = $this->model->updateComprobante($idAsiento, $strNumeroAsiento, $strFechaAsiento, $strConceptoOperacion, $strTipoComprobante, $intEstadoTransaccion, $intIdUsuario);
-	
 			echo json_encode($updateResponse);
 			die();
 		}
