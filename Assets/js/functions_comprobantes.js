@@ -85,8 +85,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Agregar datos de cada fila del detalle
             let rows = document.querySelectorAll('#detalleBody tr');
             rows.forEach((row, index) => {
-                const codigoCuenta = row.querySelector('input[name="codigoCuenta[]"]').value || "";
-                const nombreCuenta = row.querySelector('input[name="nombreCuenta[]"]').value || "";
+                const codigoCuenta = row.querySelector('select[name="codigoCuenta[]"]').value || "";
+                const nombreCuenta = row.querySelector('select[name="nombreCuenta[]"]').value || "";
                 const debe = row.querySelector('input[name="debe[]"]').value || "0";
                 const haber = row.querySelector('input[name="haber[]"]').value || "0";
                 const descripcion = row.querySelector('input[name="descripcion[]"]').value || "";
