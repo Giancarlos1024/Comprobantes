@@ -76,7 +76,15 @@ class ComprobantesModel extends Mysql
             $sql = "SELECT idCcontables FROM plancuentas WHERE codigocuenta = ?";
             $request = $this->select($sql, [$codigoCuenta]);
             error_log("Consulta para verificar cuenta existente: " . $sql . " | Parámetros: " . json_encode([$codigoCuenta]));
-    
+           
+            // if (!empty($request)) {
+            //     error_log("La cuenta ya existe con idCcontables: " . $request['idCcontables']);
+            //     return ["status" => true, "idCcontables" => $request['idCcontables']];
+            // } else {
+            //     // Si no existe, retornar un mensaje de error o un estatus específico
+            //     error_log("La cuenta no existe en plancuentas.");
+            //     return ["status" => false, "message" => "La cuenta no existe en plancuentas."];
+            // }
             if (!empty($request)) {
                 error_log("La cuenta ya existe con idCcontables: " . $request['idCcontables']);
                 return ["status" => true, "idCcontables" => $request['idCcontables']];

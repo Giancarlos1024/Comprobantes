@@ -85,22 +85,21 @@ document.addEventListener('DOMContentLoaded', function() {
             // Agregar datos de cada fila del detalle
             let rows = document.querySelectorAll('#detalleBody tr');
             rows.forEach((row, index) => {
-                const codigoCuentaElement = row.querySelector('select[name="codigoCuenta[]"]');
-                const nombreCuentaElement = row.querySelector('select[name="nombreCuenta[]"]');
-                const debeElement = row.querySelector('input[name="debe[]"]');
-                const haberElement = row.querySelector('input[name="haber[]"]');
-                const descripcionElement = row.querySelector('input[name="descripcion[]"]');
-            
-                const codigoCuenta = codigoCuentaElement ? codigoCuentaElement.value : "";
-                const nombreCuenta = nombreCuentaElement ? nombreCuentaElement.value : "";
-                const debe = debeElement ? debeElement.value : "0";
-                const haber = haberElement ? haberElement.value : "0";
-                const descripcion = descripcionElement ? descripcionElement.value : "";
-            
-                console.log(`Fila ${index}: ${codigoCuenta}, ${nombreCuenta}, ${debe}, ${haber}, ${descripcion}`);
-                // Agregar cada valor al formData u objeto que estás usando para enviar
+                const codigoCuenta = row.querySelector('input[name="codigoCuenta[]"]').value || "";
+                const nombreCuenta = row.querySelector('input[name="nombreCuenta[]"]').value || "";
+                const debe = row.querySelector('input[name="debe[]"]').value || "0";
+                const haber = row.querySelector('input[name="haber[]"]').value || "0";
+                const descripcion = row.querySelector('input[name="descripcion[]"]').value || "";
+        
+                console.log(`Fila ${index}:`, { codigoCuenta, nombreCuenta, debe, haber, descripcion });
+        
+                // Solo agregar si hay un valor
+                if (codigoCuenta) formData.append(`codigoCuenta[]`, codigoCuenta);
+                if (nombreCuenta) formData.append(`nombreCuenta[]`, nombreCuenta);
+                if (debe) formData.append(`debe[]`, debe);
+                if (haber) formData.append(`haber[]`, haber);
+                if (descripcion) formData.append(`descripcion[]`, descripcion);
             });
-            
         
             formData.append('idUsuario', intIdUsuario); // Agregar ID de usuario
         
