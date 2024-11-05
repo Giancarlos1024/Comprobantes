@@ -156,29 +156,70 @@ class Comprobantes extends Controllers
 	}
 	public function setComprobante() {
 		// Validación de campos requeridos
-		$requiredFields = ['txtNumeroAsiento', 'txtFechaAsiento', 'txtConceptoOperacion', 'listComprobante', 'listStatus', 'idUsuario'];
+		$requiredFields = ['txtNumeroAsiento', 'txtFechaAsiento', 'listComprobante', 'listStatus', 'txtConceptoOperacion', 'idUsuario'];
 		foreach ($requiredFields as $field) {
 			if (empty($_POST[$field])) {
 				echo json_encode(array("status" => false, "msg" => 'Faltan datos: ' . $field));
 				die();
 			}
 		}
-		
-		// Recoger los datos del formulario
+	
 		$strNumeroAsiento = strClean($_POST['txtNumeroAsiento']);
 		$strFechaAsiento = strClean($_POST['txtFechaAsiento']);
 		$strConceptoOperacion = strClean($_POST['txtConceptoOperacion']);
 		$strTipoComprobante = strClean($_POST['listComprobante']);
-		$intEstadoTransaccion = intval($_POST['listStatus']); // Asegúrate de recoger el estado
-		$intIdUsuario = intval($_POST['idUsuario']); // Obtener ID de usuario desde los datos POST
-		$intStatus = intval($_POST['listStatus']); // Agregar esta línea para recoger el status
+		$intEstadoTransaccion = intval($_POST['listStatus']);
+		$intIdUsuario = intval($_POST['idUsuario']);
+		$status = 1; // O cualquier otro valor que necesites
+		error_log("Datos recibidos: " . json_encode($_POST));
 	
-		// Pasar el estado al modelo
-		$insertResponse = $this->model->insertComprobante($strNumeroAsiento, $strFechaAsiento, $strConceptoOperacion, $strTipoComprobante, $intEstadoTransaccion, $intIdUsuario, $intStatus);
-		
-		echo json_encode($insertResponse);
-		die();
+		$insertResponse = $this->model->insertComprobante(
+			$strNumeroAsiento,
+			$strFechaAsiento,
+			$strConceptoOperacion,
+			$strTipoComprobante,
+			$intEstadoTransaccion,
+			$intIdUsuario,
+			$status 
+		);
+	
+		if ($insertResponse['status'] && isset($insertResponse['idAsiento'])) {
+			$idAsiento = $insertResponse['idAsiento'];
+	
+			// Procesar detalles
+			if (!empty($_POST['codigoCuenta'])) {
+				$uniqueCodes = array_unique($_POST['codigoCuenta']); // Asegúrate de que los códigos sean únicos
+				foreach ($uniqueCodes as $key => $codigoCuenta) { // Usar $key para indexar
+					$strNombreCuenta = strClean($_POST['nombreCuenta'][$key]); // Accede por índice
+					$intIdCcontables = $this->model->getOrInsertCuenta($codigoCuenta, $strNombreCuenta, $intIdUsuario);
+					
+					if ($intIdCcontables['status']) {
+						$debe = floatval(strClean($_POST['debe'][$key])); // Accede por índice
+						$haber = floatval(strClean($_POST['haber'][$key])); // Accede por índice
+						$descripcion = strClean($_POST['descripcion'][$key]); // Accede por índice
+	
+						$this->model->insertDetalleLidiario($idAsiento, $intIdCcontables['idCcontables'], $debe, $haber, $descripcion, $intIdUsuario);
+					} else {
+						ob_clean(); // Limpiar el buffer para evitar salida previa
+						echo json_encode(array("status" => false, "msg" => $intIdCcontables['message']));
+						die();
+					}
+				}
+			}
+	
+			// Crear la respuesta JSON para la inserción exitosa
+			$response = ["status" => true, "idAsiento" => $idAsiento, "message" => "Comprobante insertado correctamente."];
+			error_log("Respuesta JSON a enviar: " . json_encode($response));
+			
+			ob_clean(); // Limpiar el buffer para evitar salida previa
+			echo json_encode($response); // Enviar respuesta JSON
+		} else {
+			ob_clean(); // Limpiar el buffer para evitar salida previa
+			echo json_encode(array("status" => false, "msg" => $insertResponse['message']));
+		}
 	}
+	
+	
 	
 	public function setUpdateComprobante()
 	{
@@ -199,15 +240,12 @@ class Comprobantes extends Controllers
 			$strTipoComprobante = strClean($_POST['listComprobante']);
 			$intEstadoTransaccion = intval($_POST['listStatus']);
 			$intIdUsuario = intval($_POST['idUsuario']);
-	
-			// Llamar al modelo para actualizar
 			$updateResponse = $this->model->updateComprobante($idAsiento, $strNumeroAsiento, $strFechaAsiento, $strConceptoOperacion, $strTipoComprobante, $intEstadoTransaccion, $intIdUsuario);
 	
 			echo json_encode($updateResponse);
 			die();
 		}
 	}
-	
 	public function setDeleteComprobante()
 	{
 		if ($_POST) {

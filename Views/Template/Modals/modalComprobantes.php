@@ -1,4 +1,5 @@
 <!-- Modal -->
+<!-- Modal -->
 <div class="modal fade" id="modalFormComprobantes" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -10,8 +11,8 @@
       </div>
       <div class="modal-body">
         <form id="formComprobantes" name="formComprobantes" class="form-horizontal">
-          <input type="hidden" id="idComprobantes" name="idComprobantes" value="">
-          <input type="hidden" id="idAsiento" name="idAsiento" value=""> <!-- Campo oculto para idAsiento -->
+          
+          
           <p class="text-primary">Todos los campos son obligatorios.</p>
           <div class="form-row">
             <div class="form-group col-md-2">
@@ -41,28 +42,6 @@
             <div class="form-group col-md-12">
               <label for="txtConceptoOperacion">Concepto Operación</label>
               <input type="text" class="form-control" id="txtConceptoOperacion" name="txtConceptoOperacion" required="">
-            </div>
-
-            
-            <div class="form-group col-md-4">
-              <label for="txtCodigoCuenta">Código de Cuenta</label>
-              <input type="text" id="txtCodigoCuenta" name="txtCodigoCuenta" class="form-control" placeholder="Código de Cuenta">
-            </div>
-            <div class="form-group col-md-4">
-              <label for="txtNombreCuenta">Nombre de Cuenta</label>
-              <input type="text" id="txtNombreCuenta" name="txtNombreCuenta" class="form-control" placeholder="Nombre de Cuenta" >
-            </div>
-            <div class="form-group col-md-4">
-              <label for="txtDebe">Debe</label>
-              <input type="number" id="txtDebe" name="txtDebe" class="form-control" placeholder="Debe" >
-            </div>
-            <div class="form-group col-md-4">
-              <label for="txtHaber">Haber</label>
-              <input type="number" id="txtHaber" name="txtHaber" class="form-control" placeholder="Haber" >
-            </div>
-            <div class="form-group col-md-4">
-              <label for="txtDescripcion">Descripción</label>
-              <input type="text" id="txtDescripcion" name="txtDescripcion" class="form-control" placeholder="Descripción">
             </div>
           </div>
           <div class="table-responsive mt-4">

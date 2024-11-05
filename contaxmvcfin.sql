@@ -30,7 +30,7 @@ SET time_zone = "+00:00";
 CREATE TABLE `conceptooperacion` (
   `idAsiento` int(11) NOT NULL,
   `numeroasiento` varchar(15) NOT NULL,
-  `fecchaAsiento` date NOT NULL,
+  `fechaAsiento` date NOT NULL,
   `conceptoOperacion` varchar(500) NOT NULL,
   `tipocomprobante` varchar(45) NOT NULL,
   `estadotransaccion` int(11) NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE `conceptooperacion` (
 -- Volcado de datos para la tabla `conceptooperacion`
 --
 
-INSERT INTO `conceptooperacion` (`idAsiento`, `numeroasiento`, `fecchaAsiento`, `conceptoOperacion`, `tipocomprobante`, `estadotransaccion`, `idUsuarios`, `status`) VALUES
+INSERT INTO `conceptooperacion` (`idAsiento`, `numeroasiento`, `fechaAsiento`, `conceptoOperacion`, `tipocomprobante`, `estadotransaccion`, `idUsuarios`, `status`) VALUES
 (3, '10240001', '2024-10-24', 'Venta de productos Lacteos', 'INGRESO', 1, 0, 1),
 (4, '10240002', '2024-10-25', 'Compra de Productos Lacteos', 'EGRESO', 1, 0, 1),
 (5, '10240003', '2024-10-26', 'Compra a credito Productos Varios', 'TRASPASO', 1, 0, 1);

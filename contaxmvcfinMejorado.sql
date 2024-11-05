@@ -8,7 +8,7 @@ SET time_zone = "+00:00";
 CREATE TABLE `conceptooperacion` (
   `idAsiento` int(11) NOT NULL,
   `numeroasiento` varchar(15) NOT NULL,
-  `fecchaAsiento` date NOT NULL,
+  `fechaAsiento` date NOT NULL,
   `conceptoOperacion` varchar(500) NOT NULL,
   `tipocomprobante` varchar(45) NOT NULL,
   `estadotransaccion` int(11) NOT NULL,

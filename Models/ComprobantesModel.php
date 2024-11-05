@@ -10,19 +10,24 @@ class ComprobantesModel extends Mysql
     private $intEstadoTransaccion;
     private $intIdUsuarios;
     private $intStatus;
+    private $model;
     public function __construct()
     {
         parent::__construct();
     }
-    public function insertComprobante(string $numeroAsiento, string $fechaAsiento, string $conceptoOperacion, string $tipoComprobante, int $estadoTransaccion, int $idUsuarios, int $status) {
+    public function insertComprobante(string $numeroAsiento, string $fechaAsiento, string $conceptoOperacion, string $tipoComprobante, int $estadoTransaccion, int $idUsuarios, int $status = 1) {
         try {
-            $sql = "SELECT * FROM conceptooperacion WHERE numeroasiento = '{$numeroAsiento}'";
-            $request = $this->select_all($sql);
+            // Verifica si el número de asiento ya existe
+            $sql = "SELECT * FROM conceptooperacion WHERE numeroasiento = ?";
+            $request = $this->select_all($sql, [$numeroAsiento]);
+    
+            // Log para verificar la consulta anterior
+            error_log("Consulta para verificar existencia de asiento: " . $sql . " | Parámetros: " . json_encode([$numeroAsiento]));
+            error_log("Resultado de la verificación de existencia: " . json_encode($request));
     
             if (empty($request)) {
-                // Insertar en conceptooperacion
-                $query_insert = "INSERT INTO conceptooperacion(numeroasiento, fecchaAsiento, conceptoOperacion, tipocomprobante, estadotransaccion, idUsuarios, status) 
-                                 VALUES (?, ?, ?, ?, ?, ?, ?)";
+                // Inserta en conceptooperacion
+                $query_insert = "INSERT INTO conceptooperacion (numeroasiento, fechaAsiento, conceptoOperacion, tipocomprobante, estadotransaccion, idUsuarios, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
                 $arrData = array(
                     $numeroAsiento,
                     $fechaAsiento,
@@ -30,28 +35,126 @@ class ComprobantesModel extends Mysql
                     $tipoComprobante,
                     $estadoTransaccion,
                     $idUsuarios,
-                    $status // Asegúrate de pasar el status aquí
+                    $status
                 );
+    
+                // Log para verificar la consulta de inserción
+                error_log("Consulta de inserción en conceptooperacion: " . $query_insert . " | Parámetros: " . json_encode($arrData));
+    
+                // Aquí verificamos el resultado de la inserción
                 $request_insert = $this->insert($query_insert, $arrData);
+    
+                // Captura el ID del último comprobante insertado
                 if ($request_insert) {
-                    return ["status" => true, "message" => "Comprobante insertado correctamente."];
+                    $idAsiento = $this->getLastId();
+                    error_log("Comprobante insertado correctamente con ID: " . $idAsiento);
+                    return ["status" => true, "idAsiento" => $idAsiento, "message" => "Comprobante insertado correctamente."];
                 } else {
+                    error_log("Error al insertar comprobante en conceptooperacion.");
                     return ["status" => false, "message" => "Error al insertar comprobante."];
                 }
             } else {
-                return ["status" => "exist", "message" => "El asiento ya existe."];
+                error_log("El asiento ya existe.");
+                return ["status" => false, "message" => "El asiento ya existe."];
             }
         } catch (PDOException $e) {
-            return ["status" => false, "message" => "Error al insertar comprobante: " . $e->getMessage()];
+            error_log("Error en insertComprobante: " . $e->getMessage()); // Guarda el error en el log
+            return ["status" => false, "message" => "Error en la base de datos: " . $e->getMessage()];
+        } catch (Exception $e) {
+            error_log("Error en insertComprobante: " . $e->getMessage());
+            return ["status" => false, "message" => "Error: " . $e->getMessage()];
         }
     }
     
-    public function getLastId()
-    {
-        $sql = "SELECT LAST_INSERT_ID() AS id";
-        $request = $this->select($sql);
-        return $request ? $request['id'] : null;
+    
+    public function getLastId() {
+        try {
+            $query = "SELECT MAX(idAsiento) AS last_id FROM conceptooperacion";
+            $result = $this->conexion->query($query);
+            $lastId = $result->fetchColumn(); // Devuelve directamente la columna
+    
+            // Log para ver el último ID obtenido
+            error_log("Último ID obtenido en getLastId: " . $lastId);
+            return $lastId;
+        } catch (PDOException $e) {
+            error_log("Error en getLastId: " . $e->getMessage());
+            return null; // O maneja el error según sea necesario
+        }
     }
+    
+    public function getOrInsertCuenta(int $codigoCuenta, string $nombreCuenta, int $idUsuario) {
+        try {
+            error_log("Parámetros recibidos en getOrInsertCuenta: codigoCuenta = $codigoCuenta, nombreCuenta = $nombreCuenta, idUsuario = $idUsuario");
+    
+            $sql = "SELECT idCcontables FROM plancuentas WHERE codigocuenta = ?";
+            $request = $this->select($sql, [$codigoCuenta]);
+    
+            // Log para verificar la consulta
+            error_log("Consulta para verificar cuenta existente: " . $sql . " | Parámetros: " . json_encode([$codigoCuenta]));
+    
+            if (!empty($request)) {
+                error_log("La cuenta ya existe con idCcontables: " . $request['idCcontables']);
+                return ["status" => true, "idCcontables" => $request['idCcontables']];
+            } else {
+                $status = 1; // Activo
+                $query_insert = "INSERT INTO plancuentas (codigocuenta, nombrecuenta, idUsuario, status, fechaderegistro, fechaactualizacion) 
+                                 VALUES (?, ?, ?, ?, NOW(), NOW())";
+                $arrData = array($codigoCuenta, $nombreCuenta, $idUsuario, $status); // Usa la variable para status
+    
+                // Log para verificar la consulta de inserción
+                error_log("Consulta de inserción en plancuentas: " . $query_insert . " | Parámetros: " . json_encode($arrData));
+    
+                $request_insert = $this->insert($query_insert, $arrData);
+                
+                if ($request_insert) {
+                    error_log("Cuenta insertada correctamente con idCcontables: " . $request_insert);
+                    return ["status" => true, "idCcontables" => $request_insert];
+                } else {
+                    error_log("Error al insertar la cuenta en plancuentas.");
+                    return ["status" => false, "message" => "Error al insertar la cuenta en plancuentas."];
+                }
+            }
+        } catch (PDOException $e) {
+            error_log("Error en getOrInsertCuenta: " . $e->getMessage());
+            return ["status" => false, "message" => "Error en la base de datos: " . $e->getMessage()];
+        }
+    }
+    
+    public function insertDetalleLidiario(int $idAsiento, int $idCcontables, float $debe, float $haber, string $descripcion, int $idUsuario) {
+        try {
+            // Define las variables para el estado y el status
+            $estado = 1; // Activo
+            $status = 1; // Activo
+    
+            error_log("Parámetros recibidos en insertDetalleLidiario: idAsiento = $idAsiento, idCcontables = $idCcontables, debe = $debe, haber = $haber, descripcion = $descripcion, idUsuario = $idUsuario, status=$status");
+    
+            $query_insert = "INSERT INTO lidiario 
+                                (idAsiento, idCcontables, debe, haber, descripcion, estado, fechacreacion, fechaactualizado, idUsuario, status) 
+                             VALUES 
+                                (?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?)";
+    
+            // Usa las variables en lugar de números mágicos
+            $arrData = array($idAsiento, $idCcontables, $debe, $haber, $descripcion, $estado, $idUsuario, $status);
+    
+            // Log para verificar la consulta de inserción
+            error_log("Consulta de inserción en lidiario: " . $query_insert . " | Parámetros: " . json_encode($arrData));
+    
+            $request_insert = $this->insert($query_insert, $arrData);
+            
+            if ($request_insert) {
+                error_log("Detalle insertado correctamente en lidiario.");
+                return ["status" => true, "message" => "Detalle insertado correctamente en lidiario."];
+            } else {
+                error_log("Error al insertar el detalle en lidiario.");
+                return ["status" => false, "message" => "Error al insertar el detalle en lidiario."];
+            }
+        } catch (PDOException $e) {
+            error_log("Error en insertDetalleLidiario: " . $e->getMessage());
+            return ["status" => false, "message" => "Error en la base de datos: " . $e->getMessage()];
+        }
+    }
+    
+
     public function selectComprobantes()
     {
         $sql = "SELECT * FROM conceptooperacion WHERE status != 0";
@@ -64,7 +167,7 @@ class ComprobantesModel extends Mysql
         $sql = "SELECT 
                     co.idAsiento, 
                     co.numeroasiento, 
-                    co.fecchaAsiento, 
+                    co.fechaAsiento, 
                     co.conceptoOperacion, 
                     co.tipocomprobante, 
                     co.estadotransaccion, 
@@ -86,7 +189,7 @@ class ComprobantesModel extends Mysql
     public function updateComprobante($idAsiento, $numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios)
     {
         try {
-            $query_update = "UPDATE conceptooperacion SET numeroasiento = ?, fecchaAsiento = ?, conceptoOperacion = ?, tipocomprobante = ?, estadotransaccion = ?, idUsuarios = ? WHERE idAsiento = ?";
+            $query_update = "UPDATE conceptooperacion SET numeroasiento = ?, fechaAsiento = ?, conceptoOperacion = ?, tipocomprobante = ?, estadotransaccion = ?, idUsuarios = ? WHERE idAsiento = ?";
             $arrData = array($numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios, $idAsiento);
             $request_update = $this->update($query_update, $arrData);
             

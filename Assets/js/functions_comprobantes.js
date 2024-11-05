@@ -2,13 +2,16 @@ var tableComprobantes;
 var divLoading = document.querySelector("#divLoading");
 const loggedUserId = localStorage.getItem('loggedUserId');
 const loggedUserEmail = localStorage.getItem('loggedUserEmail');
+
 if (loggedUserId) {
     console.log("Usuario logueado ID:", loggedUserId);
     console.log("Correo del usuario logueado:", loggedUserEmail);
 } else {
     console.log("No hay usuario logueado.");
 }
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("Iniciando DataTable...");
     tableComprobantes = $('#tableComprobantes').dataTable({
         "aProcessing": true,
         "aServerSide": true,
@@ -22,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
         "columns": [
             { "data": "idAsiento" },
             { "data": "numeroasiento" },
-            { "data": "fecchaAsiento" },
+            { "data": "fechaAsiento" },
             { "data": "conceptoOperacion" },
             { "data": "tipocomprobante" },
             { "data": "estadotransaccion" },
@@ -47,88 +50,109 @@ document.addEventListener('DOMContentLoaded', function() {
     if (formComprobante) {
         formComprobante.onsubmit = function(e) {
             e.preventDefault();
+        
+            // Obtener datos del formulario principal
             let strNumeroAsiento = document.querySelector('#txtNumeroAsiento').value;
             let strFechaAsiento = document.querySelector('#txtFechaAsiento').value;
             let strTipoComprobante = document.querySelector('#listComprobante').value;
             let intEstadoTransaccion = document.querySelector('#listStatus').value;
             let strConceptoOperacion = document.querySelector('#txtConceptoOperacion').value;
-            let intIdUsuario = loggedUserId; // Usar el ID del usuario logueado
-
-            let strCodigoCuenta = document.querySelector('#txtCodigoCuenta').value;
-            let strNombreCuenta = document.querySelector('#txtNombreCuenta').value;
-            let strDebe = document.querySelector('#txtDebe').value;
-            let strHaber = document.querySelector('#txtHaber').value;
-            let strDescripcion = document.querySelector('#txtDescripcion').value;
-
+            let intIdUsuario = loggedUserId;
+        
+            // Log de los datos del formulario
+            console.log("Datos del formulario:", {
+                strNumeroAsiento,
+                strFechaAsiento,
+                strTipoComprobante,
+                intEstadoTransaccion,
+                strConceptoOperacion,
+                intIdUsuario
+            });
+        
+            // Validación de campos principales
             if (!strNumeroAsiento || !intEstadoTransaccion || !strFechaAsiento || !strConceptoOperacion || !strTipoComprobante || !intIdUsuario) {
                 console.error("Error: Todos los campos son obligatorios.");
                 swal("Atención", "Todos los campos son obligatorios.", "error");
                 return false;
             }
-
-            if (!strNumeroAsiento || !intEstadoTransaccion || !strFechaAsiento || !strConceptoOperacion || !strTipoComprobante || !intIdUsuario || !strCodigoCuenta || !strNombreCuenta || !strDebe || !strHaber || !strDescripcion) {
-                console.error("Error: Todos los campos son obligatorios.");
-                swal("Atención", "Todos los campos son obligatorios.", "error");
-                return false;
-            }
-
-            console.log("Formulario capturado:");
-            console.log("Numero Asiento:", strNumeroAsiento);
-            console.log("Fecha Asiento:", strFechaAsiento);
-            console.log("Concepto Operacion:", strConceptoOperacion);
-            console.log("Tipo Comprobante:", strTipoComprobante);
-            console.log("Estado Transaccion:", intEstadoTransaccion);
-            console.log("ID Usuario:", intIdUsuario);
-            console.log("Código Cuenta:", strCodigoCuenta);
-            console.log("Nombre Cuenta:", strNombreCuenta);
-            console.log("Debe:", strDebe);
-            console.log("Haber:", strHaber);
-            console.log("Descripción:", strDescripcion);
-
-
+        
+            // Preparar los datos para enviar
             divLoading.style.display = "flex";
             let request = new XMLHttpRequest();
             let ajaxUrl = base_url + '/Comprobantes/setComprobante';
             let formData = new FormData(formComprobante);
+        
+            // Agregar datos de cada fila del detalle
+            let rows = document.querySelectorAll('#detalleBody tr');
+            rows.forEach((row, index) => {
+                const codigoCuenta = row.querySelector('input[name="codigoCuenta[]"]').value || "";
+                const nombreCuenta = row.querySelector('input[name="nombreCuenta[]"]').value || "";
+                const debe = row.querySelector('input[name="debe[]"]').value || "0";
+                const haber = row.querySelector('input[name="haber[]"]').value || "0";
+                const descripcion = row.querySelector('input[name="descripcion[]"]').value || "";
+        
+                console.log(`Fila ${index}:`, { codigoCuenta, nombreCuenta, debe, haber, descripcion });
+        
+                // Solo agregar si hay un valor
+                if (codigoCuenta) formData.append(`codigoCuenta[]`, codigoCuenta);
+                if (nombreCuenta) formData.append(`nombreCuenta[]`, nombreCuenta);
+                if (debe) formData.append(`debe[]`, debe);
+                if (haber) formData.append(`haber[]`, haber);
+                if (descripcion) formData.append(`descripcion[]`, descripcion);
+            });
+        
             formData.append('idUsuario', intIdUsuario); // Agregar ID de usuario
-            formData.append('codigoCuenta', strCodigoCuenta);
-            formData.append('nombreCuenta', strNombreCuenta);
-            formData.append('debe', strDebe);
-            formData.append('haber', strHaber);
-            formData.append('descripcion', strDescripcion);
-
+        
+            // Log de FormData
+            for (var pair of formData.entries()) {
+                console.log(pair[0] + ', ' + pair[1]);
+            }
+        
             request.open("POST", ajaxUrl, true);
+            console.log("Enviando datos a:", ajaxUrl); // Log de URL
             request.send(formData);
             request.onreadystatechange = function() {
                 if (request.readyState === 4) {
-                    console.log("Estado de la solicitud: ", request.status);
-                    if (request.status === 200) {
-                        console.log("Respuesta del servidor: ", request.responseText);
+                    divLoading.style.display = "none";
+                    console.log("Estado de la solicitud:", request.status, request.statusText);
+                    console.log("Respuesta completa del servidor:", request.responseText); 
+            
+                    if (request.status >= 200 && request.status < 300) {
                         try {
                             let objData = JSON.parse(request.responseText);
-                            if (objData.status) {
-                                $('#tableComprobantes').DataTable().ajax.reload();
-                                $('#modalFormComprobantes').modal("hide");
-                                formComprobante.reset();
-                                swal("Comprobante", objData.message, "success");
+                            console.log("Respuesta del servidor como JSON:", objData);
+            
+                            // Validación del JSON
+                            if (objData && typeof objData === "object" && objData.hasOwnProperty("status")) {
+                                if (objData.status) {
+                                    $('#tableComprobantes').DataTable().ajax.reload();
+                                    $('#modalFormComprobantes').modal("hide");
+                                    formComprobante.reset();
+                                    swal("Comprobante", objData.message || "Comprobante guardado exitosamente.", "success");
+                                } else {
+                                    swal("Atención", objData.msg || "Hubo un problema al procesar su solicitud.", "error");
+                                }
                             } else {
-                                swal("Atención", objData.message, "error");
+                                console.error("JSON inválido: No se encontró la propiedad 'status' en la respuesta.", objData);
+                                swal("Error", "La respuesta del servidor es inválida.", "error");
                             }
                         } catch (error) {
                             console.error("Error al procesar la respuesta JSON:", error);
+                            console.error("Respuesta completa del servidor (no JSON):", request.responseText);
+                            swal("Error", "Error al procesar la respuesta del servidor.", "error");
                         }
                     } else {
                         console.error("Error en la solicitud:", request.statusText);
+                        swal("Error", "Ha ocurrido un error en la solicitud. Inténtelo de nuevo.", "error");
                     }
-                    divLoading.style.display = "none";
                 }
             };
+            
         }
     }
-    
 }, false);
+
 function openModal() {
-    document.querySelector('#idComprobantes').value = "";
     document.querySelector('.modal-header').classList.replace("headerUpdate", "headerRegister");
     document.querySelector('#btnActionForm').classList.replace("btn-info", "btn-primary");
     document.querySelector('#btnText').innerHTML = "Guardar";
@@ -136,6 +160,7 @@ function openModal() {
     document.querySelector("#formComprobantes").reset();
     $('#modalFormComprobantes').modal('show');
 }
+
 function fntViewInfo(idAsiento) {
     var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
     var ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
@@ -147,7 +172,7 @@ function fntViewInfo(idAsiento) {
             if (objData.status) {
                 document.querySelector("#celIdComprobante").innerHTML = objData.data.idAsiento;
                 document.querySelector("#celNumeroAsiento").innerHTML = objData.data.numeroasiento;
-                document.querySelector("#celFechaAsiento").innerHTML = objData.data.fecchaAsiento;
+                document.querySelector("#celFechaAsiento").innerHTML = objData.data.fechaAsiento;
                 document.querySelector("#celDetalle").innerHTML = objData.data.conceptoOperacion;
                 document.querySelector("#celTipoComprobante").innerHTML = objData.data.tipocomprobante;
                 document.querySelector("#celEstadoTransaccion").innerHTML = objData.data.estadotransaccion;
@@ -179,9 +204,9 @@ function fntEditInfo(idAsiento) {
         if (request.readyState == 4 && request.status == 200) {
             var objData = JSON.parse(request.responseText);
             if (objData.status) {
-                // document.querySelector("#idComprobantes").value = objData.data.idAsiento;
+                
                 document.querySelector("#txtNumeroAsiento").value = objData.data.numeroasiento;
-                document.querySelector("#txtFechaAsiento").value = objData.data.fecchaAsiento;
+                document.querySelector("#txtFechaAsiento").value = objData.data.fechaAsiento;
                 document.querySelector("#txtConceptoOperacion").value = objData.data.conceptoOperacion;
                 document.querySelector("#listComprobante").value = objData.data.tipocomprobante;
                 document.querySelector("#listStatus").value = objData.data.status;   
@@ -230,52 +255,27 @@ function fntDeltInfo(idAsiento) {
     });
 }
 
+document.querySelector('#addRow').addEventListener('click', function() {
+    let tableBody = document.querySelector('#detalleBody');
+    let existingRows = tableBody.querySelectorAll('tr');
+    
+    // Verifica que no haya más de un tipo de cuenta con el mismo código
+    let newRow = document.createElement('tr');
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Selecciona el botón para agregar filas y le añade un evento de click
-    document.querySelector('#addRow').addEventListener('click', function() {
-        // Obtiene los valores de los campos
-        let codigoCuenta = document.querySelector('#txtCodigoCuenta').value;
-        let nombreCuenta = document.querySelector('#txtNombreCuenta').value;
-        let debe = document.querySelector('#txtDebe').value;
-        let haber = document.querySelector('#txtHaber').value;
-        let descripcion = document.querySelector('#txtDescripcion').value;
+    newRow.innerHTML = `
+        <td>${existingRows.length + 1}</td>
+        <td><input type="text" name="codigoCuenta[]" class="form-control" placeholder="Código de Cuenta"></td>
+        <td><input type="text" name="nombreCuenta[]" class="form-control" placeholder="Nombre de Cuenta"></td>
+        <td><input type="number" name="debe[]" class="form-control" placeholder="Debe" step="0.01" oninput="updateTotals()"></td>
+        <td><input type="number" name="haber[]" class="form-control" placeholder="Haber" step="0.01" oninput="updateTotals()"></td>
+        <td><input type="text" name="descripcion[]" class="form-control" placeholder="Descripción"></td>
+        <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Eliminar</button></td>
+    `;
 
-        // Verifica si todos los campos necesarios tienen valores
-        if (!codigoCuenta || !nombreCuenta || !debe || !haber || !descripcion) {
-            alert("Todos los campos son obligatorios");
-            return;
-        }
-
-        // Crea una nueva fila en la tabla
-        let tableBody = document.querySelector('#detalleBody');
-        let rowCount = tableBody.rows.length + 1;
-        let newRow = document.createElement('tr');
-
-        newRow.innerHTML = `
-            <td>${rowCount}</td>
-            <td>${codigoCuenta}</td>
-            <td>${nombreCuenta}</td>
-            <td>${debe}</td>
-            <td>${haber}</td>
-            <td>${descripcion}</td>
-            <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Eliminar</button></td>
-        `;
-
-        // Añade la nueva fila al cuerpo de la tabla
-        tableBody.appendChild(newRow);
-
-        // Limpia los campos después de agregar la fila
-        document.querySelector('#txtCodigoCuenta').value = '';
-        document.querySelector('#txtNombreCuenta').value = '';
-        document.querySelector('#txtDebe').value = '';
-        document.querySelector('#txtHaber').value = '';
-        document.querySelector('#txtDescripcion').value = '';
-
-        // Actualiza los totales
-        updateTotals();
-    });
+    tableBody.appendChild(newRow);
+    updateTotals();
 });
+
 
 // Función para eliminar una fila
 function removeRow(button) {
@@ -289,10 +289,9 @@ function updateTotals() {
     let totalDebe = 0;
     let totalHaber = 0;
     document.querySelectorAll('#detalleBody tr').forEach(row => {
-        totalDebe += parseFloat(row.cells[3].innerText) || 0;
-        totalHaber += parseFloat(row.cells[4].innerText) || 0;
+        totalDebe += parseFloat(row.querySelector('[name="debe[]"]').value) || 0;
+        totalHaber += parseFloat(row.querySelector('[name="haber[]"]').value) || 0;
     });
     document.querySelector('#totalDebe').innerText = totalDebe.toFixed(2);
     document.querySelector('#totalHaber').innerText = totalHaber.toFixed(2);
 }
-
