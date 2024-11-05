@@ -158,6 +158,11 @@ function openModal() {
     document.querySelector('#btnText').innerHTML = "Guardar";
     document.querySelector('#titleModal').innerHTML = "Nuevo comprobante";
     document.querySelector("#formComprobantes").reset();
+    
+    // Habilitar el campo de número de asiento al abrir el modal para crear uno nuevo
+    document.querySelector("#txtNumeroAsiento").disabled = false;
+    document.querySelector("#listStatus").disabled = false;
+
     $('#modalFormComprobantes').modal('show');
 }
 
@@ -196,6 +201,7 @@ function fntEditInfo(idAsiento) {
     document.querySelector('.modal-header').classList.replace("headerRegister", "headerUpdate");
     document.querySelector('#btnActionForm').classList.replace("btn-primary", "btn-info");
     document.querySelector('#btnText').innerHTML = "Actualizar";
+    
     var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
     var ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
     request.open("GET", ajaxUrl, true);
@@ -204,14 +210,16 @@ function fntEditInfo(idAsiento) {
         if (request.readyState == 4 && request.status == 200) {
             var objData = JSON.parse(request.responseText);
             if (objData.status) {
-                
                 document.querySelector("#txtNumeroAsiento").value = objData.data.numeroasiento;
                 document.querySelector("#txtFechaAsiento").value = objData.data.fechaAsiento;
                 document.querySelector("#txtConceptoOperacion").value = objData.data.conceptoOperacion;
                 document.querySelector("#listComprobante").value = objData.data.tipocomprobante;
                 document.querySelector("#listStatus").value = objData.data.status;   
-                
-                
+
+                // Deshabilitar el campo de número de asiento
+                document.querySelector("#txtNumeroAsiento").disabled = true; 
+                document.querySelector("#listStatus").disabled = true;
+
                 $('#listComprobante').selectpicker('render');
                 $('#listStatus').selectpicker('render');
                 $('#modalFormComprobantes').modal('show');
@@ -221,6 +229,7 @@ function fntEditInfo(idAsiento) {
         }
     }
 }
+
 function fntDeltInfo(idAsiento) {
     swal({
         title: "Eliminar Información",
