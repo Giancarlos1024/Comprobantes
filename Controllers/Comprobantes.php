@@ -162,10 +162,35 @@ class Comprobantes extends Controllers
 				die();
 			}
 		}
-		$strNumeroAsiento = strClean($_POST['txtNumeroAsiento']);
+		// Obtén los valores del formulario
+		$strNumeroAsientoOriginal = strClean($_POST['txtNumeroAsiento']);
 		$strFechaAsiento = strClean($_POST['txtFechaAsiento']);
-		$strConceptoOperacion = strClean($_POST['txtConceptoOperacion']);
 		$strTipoComprobante = strClean($_POST['listComprobante']);
+		// Extrae la primera letra del tipo de comprobante
+		$letraTipoComprobante = strtoupper(substr($strTipoComprobante, 0, 1));
+		// Obtén el mes de la fecha de asiento
+		// $strFechaAsiento = strClean($_POST['txtFechaAsiento']);
+
+		// Intenta primero con el formato 'd/m/Y', luego 'Y-m-d' si falla
+		$fechaAsientoDate = DateTime::createFromFormat('d/m/Y', $strFechaAsiento);
+		if (!$fechaAsientoDate) {
+			$fechaAsientoDate = DateTime::createFromFormat('Y-m-d', $strFechaAsiento);
+		}
+	
+		// Verifica si la fecha fue procesada correctamente en cualquiera de los formatos
+		if (!$fechaAsientoDate) {
+			echo json_encode(["status" => false, "msg" => "Formato de fecha inválido. Se esperaba DD/MM/YYYY o YYYY-MM-DD"]);
+			die();
+		}
+	
+		// Continuar usando $fechaAsientoDate en el formato que necesites
+		$mesAsiento = $fechaAsientoDate->format('m');
+		$strNumeroAsiento = "C" . $letraTipoComprobante . $mesAsiento . $strNumeroAsientoOriginal;
+	
+
+		// $strFechaAsiento = strClean($_POST['txtFechaAsiento']);
+		$strConceptoOperacion = strClean($_POST['txtConceptoOperacion']);
+		// $strTipoComprobante = strClean($_POST['listComprobante']);
 		$intEstadoTransaccion = intval($_POST['listStatus']);
 		$intIdUsuario = intval($_POST['idUsuario']);
 		$status = 1; // O cualquier otro valor que necesites
@@ -218,6 +243,30 @@ class Comprobantes extends Controllers
 		die();
 	}
 	
+	// public function setUpdateComprobante()
+	// {
+	// 	if ($_POST) {
+	// 		// Validación de campos requeridos
+	// 		$requiredFields = ['idAsiento', 'txtNumeroAsiento', 'txtFechaAsiento', 'txtConceptoOperacion', 'listComprobante', 'listStatus'];
+	// 		foreach ($requiredFields as $field) {
+	// 			if (empty($_POST[$field])) {
+	// 				echo json_encode(array("status" => false, "msg" => 'Faltan datos: ' . $field));
+	// 				die();
+	// 			}
+	// 		}
+	// 		$idAsiento = intval($_POST['idAsiento']);
+	// 		$strNumeroAsiento = strClean($_POST['txtNumeroAsiento']);
+	// 		$strFechaAsiento = strClean($_POST['txtFechaAsiento']);
+	// 		$strConceptoOperacion = strClean($_POST['txtConceptoOperacion']);
+	// 		$strTipoComprobante = strClean($_POST['listComprobante']);
+	// 		$intEstadoTransaccion = intval($_POST['listStatus']);
+	// 		$intIdUsuario = intval($_POST['idUsuario']);
+	// 		$updateResponse = $this->model->updateComprobante($idAsiento, $strNumeroAsiento, $strFechaAsiento, $strConceptoOperacion, $strTipoComprobante, $intEstadoTransaccion, $intIdUsuario);
+	// 		echo json_encode($updateResponse);
+	// 		die();
+	// 	}
+	// }
+
 	public function setUpdateComprobante()
 	{
 		if ($_POST) {
@@ -225,10 +274,12 @@ class Comprobantes extends Controllers
 			$requiredFields = ['idAsiento', 'txtNumeroAsiento', 'txtFechaAsiento', 'txtConceptoOperacion', 'listComprobante', 'listStatus'];
 			foreach ($requiredFields as $field) {
 				if (empty($_POST[$field])) {
+					error_log("Error: Faltan datos: " . $field); // Agregado para depuración
 					echo json_encode(array("status" => false, "msg" => 'Faltan datos: ' . $field));
 					die();
 				}
 			}
+
 			$idAsiento = intval($_POST['idAsiento']);
 			$strNumeroAsiento = strClean($_POST['txtNumeroAsiento']);
 			$strFechaAsiento = strClean($_POST['txtFechaAsiento']);
@@ -236,11 +287,16 @@ class Comprobantes extends Controllers
 			$strTipoComprobante = strClean($_POST['listComprobante']);
 			$intEstadoTransaccion = intval($_POST['listStatus']);
 			$intIdUsuario = intval($_POST['idUsuario']);
+
+			// Log de datos antes de la actualización
+			error_log("Actualizando Comprobante ID: $idAsiento con datos: " . json_encode($_POST));
+
 			$updateResponse = $this->model->updateComprobante($idAsiento, $strNumeroAsiento, $strFechaAsiento, $strConceptoOperacion, $strTipoComprobante, $intEstadoTransaccion, $intIdUsuario);
 			echo json_encode($updateResponse);
 			die();
 		}
 	}
+
 	public function setDeleteComprobante()
 	{
 		if ($_POST) {

@@ -76,15 +76,6 @@ class ComprobantesModel extends Mysql
             $sql = "SELECT idCcontables FROM plancuentas WHERE codigocuenta = ?";
             $request = $this->select($sql, [$codigoCuenta]);
             error_log("Consulta para verificar cuenta existente: " . $sql . " | Parámetros: " . json_encode([$codigoCuenta]));
-           
-            // if (!empty($request)) {
-            //     error_log("La cuenta ya existe con idCcontables: " . $request['idCcontables']);
-            //     return ["status" => true, "idCcontables" => $request['idCcontables']];
-            // } else {
-            //     // Si no existe, retornar un mensaje de error o un estatus específico
-            //     error_log("La cuenta no existe en plancuentas.");
-            //     return ["status" => false, "message" => "La cuenta no existe en plancuentas."];
-            // }
             if (!empty($request)) {
                 error_log("La cuenta ya existe con idCcontables: " . $request['idCcontables']);
                 return ["status" => true, "idCcontables" => $request['idCcontables']];
@@ -175,21 +166,63 @@ class ComprobantesModel extends Mysql
         $request = $this->select($sql);
         return $request;
     }
+    // public function updateComprobante($idAsiento, $numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios)
+    // {
+    //     try {
+    //         $query_update = "UPDATE conceptooperacion SET numeroasiento = ?, fechaAsiento = ?, conceptoOperacion = ?, tipocomprobante = ?, estadotransaccion = ?, idUsuarios = ? WHERE idAsiento = ?";
+    //         $arrData = array($numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios, $idAsiento);
+    //         $request_update = $this->update($query_update, $arrData);
+    //         if ($request_update) {
+    //             return ["status" => true, "message" => "Comprobante actualizado correctamente."];
+    //         } else {
+    //             return ["status" => false, "message" => "Error al actualizar el comprobante."];
+    //         }
+    //     } catch (PDOException $e) {
+    //         return ["status" => false, "message" => "Error: " . $e->getMessage()];
+    //     }
+    // }
+
     public function updateComprobante($idAsiento, $numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios)
-    {
-        try {
-            $query_update = "UPDATE conceptooperacion SET numeroasiento = ?, fechaAsiento = ?, conceptoOperacion = ?, tipocomprobante = ?, estadotransaccion = ?, idUsuarios = ? WHERE idAsiento = ?";
-            $arrData = array($numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios, $idAsiento);
-            $request_update = $this->update($query_update, $arrData);
-            if ($request_update) {
-                return ["status" => true, "message" => "Comprobante actualizado correctamente."];
-            } else {
-                return ["status" => false, "message" => "Error al actualizar el comprobante."];
-            }
-        } catch (PDOException $e) {
-            return ["status" => false, "message" => "Error: " . $e->getMessage()];
+{
+    try {
+        // Comprobación de si el número de asiento está vacío o no se proporciona
+        if (empty($numeroAsiento)) {
+            error_log("Error: El número de asiento no está definido.");
+            return ["status" => false, "message" => "Faltan datos: txtNumeroAsiento"];
         }
+
+        // Log del número de asiento recibido
+        error_log("Número de asiento recibido: $numeroAsiento");
+
+        error_log("Iniciando actualización del comprobante ID: $idAsiento."); // Agregado para depuración
+
+        // Preparación de la consulta de actualización
+        $query_update = "UPDATE conceptooperacion SET numeroasiento = ?, fechaAsiento = ?, conceptoOperacion = ?, tipocomprobante = ?, estadotransaccion = ?, idUsuarios = ? WHERE idAsiento = ?";
+        $arrData = array($numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios, $idAsiento);
+        
+        // Log de consulta y parámetros
+        error_log("Consulta: $query_update");
+        error_log("Parámetros: " . json_encode($arrData));
+
+        // Ejecución de la actualización
+        $request_update = $this->update($query_update, $arrData);
+        
+        // Verificación del resultado de la actualización
+        if ($request_update) {
+            error_log("Comprobante ID: $idAsiento actualizado correctamente.");
+            return ["status" => true, "message" => "Comprobante actualizado correctamente."];
+        } else {
+            error_log("Error al actualizar el comprobante ID: $idAsiento.");
+            return ["status" => false, "message" => "Error al actualizar el comprobante."];
+        }
+    } catch (PDOException $e) {
+        error_log("Error en la actualización: " . $e->getMessage()); // Log de errores
+        return ["status" => false, "message" => "Error: " . $e->getMessage()];
     }
+}
+
+
+
     public function deleteComprobante(int $idAsiento)
     {
         $this->intIdAsiento = $idAsiento;

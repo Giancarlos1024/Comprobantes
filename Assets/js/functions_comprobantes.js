@@ -315,42 +315,61 @@ function updateTotals() {
 
 
 function loadCuentaOptions(rowIndex) {
-    fetch('http://localhost/contaxmvcfin/Comprobantes/getPlanCuentas') // Cambia a la ruta correspondiente en tu proyecto
-        .then(response => response.json())
-        .then(data => {
-            let codigoSelect = document.getElementById(`codigoCuentaSelect${rowIndex}`);
-            let nombreSelect = document.getElementById(`nombreCuentaSelect${rowIndex}`);
-            
-            data.forEach(cuenta => {
-                let codigoOption = document.createElement('option');
-                codigoOption.value = cuenta.codigocuenta;
-                codigoOption.text = cuenta.codigocuenta;
-                codigoSelect.appendChild(codigoOption);
-            
-                let nombreOption = document.createElement('option');
-                nombreOption.value = cuenta.nombrecuenta;
-                nombreOption.text = cuenta.nombrecuenta;
-                nombreSelect.appendChild(nombreOption);
-            });
-        })
-        .catch(error => console.error('Error al cargar cuentas:', error));
+    var request = new XMLHttpRequest();
+    var ajaxUrl = base_url + '/Comprobantes/getPlanCuentas'; // Cambia a la ruta correspondiente en tu proyecto
+    request.open("GET", ajaxUrl, true);
+    request.send();
+
+    request.onreadystatechange = function() {
+        if (request.readyState === 4) {
+            if (request.status === 200) {
+                let data = JSON.parse(request.responseText);
+                let codigoSelect = document.getElementById(`codigoCuentaSelect${rowIndex}`);
+                let nombreSelect = document.getElementById(`nombreCuentaSelect${rowIndex}`);
+                
+                data.forEach(cuenta => {
+                    let codigoOption = document.createElement('option');
+                    codigoOption.value = cuenta.codigocuenta;
+                    codigoOption.text = cuenta.codigocuenta;
+                    codigoSelect.appendChild(codigoOption);
+                
+                    let nombreOption = document.createElement('option');
+                    nombreOption.value = cuenta.nombrecuenta;
+                    nombreOption.text = cuenta.nombrecuenta;
+                    nombreSelect.appendChild(nombreOption);
+                });
+            } else {
+                console.error('Error al cargar cuentas:', request.statusText);
+            }
+        }
+    };
 }
+
 
 function updateNombreCuenta(rowIndex) {
     let codigoSelect = document.getElementById(`codigoCuentaSelect${rowIndex}`);
     let nombreSelect = document.getElementById(`nombreCuentaSelect${rowIndex}`);
     let selectedCodigo = codigoSelect.value;
 
-    fetch('http://localhost/contaxmvcfin/Comprobantes/getPlanCuentas')
-        .then(response => response.json())
-        .then(data => {
-            const cuenta = data.find(item => item.codigocuenta === selectedCodigo);
-            if (cuenta) {
-                nombreSelect.value = cuenta.nombrecuenta;
+    var request = new XMLHttpRequest();
+    var ajaxUrl = base_url + '/Comprobantes/getPlanCuentas';
+    request.open("GET", ajaxUrl, true);
+    request.send();
+
+    request.onreadystatechange = function() {
+        if (request.readyState === 4) {
+            if (request.status === 200) {
+                let data = JSON.parse(request.responseText);
+                const cuenta = data.find(item => item.codigocuenta === selectedCodigo);
+                if (cuenta) {
+                    nombreSelect.value = cuenta.nombrecuenta;
+                } else {
+                    nombreSelect.value = '';
+                }
             } else {
-                nombreSelect.value = '';
+                console.error('Error al actualizar nombre de cuenta:', request.statusText);
             }
-        })
-        .catch(error => console.error('Error al actualizar nombre de cuenta:', error));
+        }
+    };
 }
 
