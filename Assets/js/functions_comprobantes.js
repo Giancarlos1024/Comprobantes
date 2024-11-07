@@ -45,44 +45,39 @@ document.addEventListener('DOMContentLoaded', function() {
         "iDisplayLength": 10,
         "order": [[0, "desc"]]
     });
-
     let formComprobante = document.querySelector("#formComprobantes");
     if (formComprobante) {
         formComprobante.onsubmit = function(e) {
             e.preventDefault();
-        
-            // Obtener datos del formulario principal
+            // Verificar si los totales de debe y haber son iguales
+            let totalDebe = parseFloat(document.querySelector('#totalDebe').innerText);
+            let totalHaber = parseFloat(document.querySelector('#totalHaber').innerText);
+
+            if (totalDebe !== totalHaber) {
+                swal("Advertencia", "Los totales de 'Debe' y 'Haber' no son iguales. Por favor, verifica los valores antes de guardar.", "warning");
+                return false;  // Detener el envío del formulario
+            }
+
+            // Ocultar mensaje de advertencia si los totales son iguales
+            // document.querySelector('#alertMessage').style.display = 'none';
+
             let strNumeroAsiento = document.querySelector('#txtNumeroAsiento').value;
             let strFechaAsiento = document.querySelector('#txtFechaAsiento').value;
             let strTipoComprobante = document.querySelector('#listComprobante').value;
             let intEstadoTransaccion = document.querySelector('#listStatus').value;
             let strConceptoOperacion = document.querySelector('#txtConceptoOperacion').value;
             let intIdUsuario = loggedUserId;
-        
-            // Log de los datos del formulario
-            console.log("Datos del formulario:", {
-                strNumeroAsiento,
-                strFechaAsiento,
-                strTipoComprobante,
-                intEstadoTransaccion,
-                strConceptoOperacion,
-                intIdUsuario
-            });
-        
-            // Validación de campos principales
+
             if (!strNumeroAsiento || !intEstadoTransaccion || !strFechaAsiento || !strConceptoOperacion || !strTipoComprobante || !intIdUsuario) {
                 console.error("Error: Todos los campos son obligatorios.");
                 swal("Atención", "Todos los campos son obligatorios.", "error");
                 return false;
             }
-        
-            // Preparar los datos para enviar
+
             divLoading.style.display = "flex";
             let request = new XMLHttpRequest();
             let ajaxUrl = base_url + '/Comprobantes/setComprobante';
             let formData = new FormData(formComprobante);
-        
-            // Agregar datos de cada fila del detalle
             let rows = document.querySelectorAll('#detalleBody tr');
             rows.forEach((row, index) => {
                 const codigoCuenta = row.querySelector('select[name="codigoCuenta[]"]').value || "";
@@ -90,39 +85,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 const debe = row.querySelector('input[name="debe[]"]').value || "0";
                 const haber = row.querySelector('input[name="haber[]"]').value || "0";
                 const descripcion = row.querySelector('input[name="descripcion[]"]').value || "";
-        
-                console.log(`Fila ${index}:`, { codigoCuenta, nombreCuenta, debe, haber, descripcion });
-        
-                // Solo agregar si hay un valor
+
                 if (codigoCuenta) formData.append(`codigoCuenta[]`, codigoCuenta);
                 if (nombreCuenta) formData.append(`nombreCuenta[]`, nombreCuenta);
                 if (debe) formData.append(`debe[]`, debe);
                 if (haber) formData.append(`haber[]`, haber);
                 if (descripcion) formData.append(`descripcion[]`, descripcion);
             });
-        
             formData.append('idUsuario', intIdUsuario); // Agregar ID de usuario
-        
-            // Log de FormData
-            for (var pair of formData.entries()) {
-                console.log(pair[0] + ', ' + pair[1]);
-            }
-        
             request.open("POST", ajaxUrl, true);
-            console.log("Enviando datos a:", ajaxUrl); // Log de URL
             request.send(formData);
             request.onreadystatechange = function() {
                 if (request.readyState === 4) {
                     divLoading.style.display = "none";
-                    console.log("Estado de la solicitud:", request.status, request.statusText);
-                    console.log("Respuesta completa del servidor:", request.responseText); 
-            
                     if (request.status >= 200 && request.status < 300) {
                         try {
                             let objData = JSON.parse(request.responseText);
-                            console.log("Respuesta del servidor como JSON:", objData);
-            
-                            // Validación del JSON
                             if (objData && typeof objData === "object" && objData.hasOwnProperty("status")) {
                                 if (objData.status) {
                                     $('#tableComprobantes').DataTable().ajax.reload();
@@ -132,22 +110,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                 } else {
                                     swal("Atención", objData.msg || "Hubo un problema al procesar su solicitud.", "error");
                                 }
-                            } else {
-                                console.error("JSON inválido: No se encontró la propiedad 'status' en la respuesta.", objData);
-                                swal("Error", "La respuesta del servidor es inválida.", "error");
                             }
                         } catch (error) {
-                            console.error("Error al procesar la respuesta JSON:", error);
-                            console.error("Respuesta completa del servidor (no JSON):", request.responseText);
                             swal("Error", "Error al procesar la respuesta del servidor.", "error");
                         }
                     } else {
-                        console.error("Error en la solicitud:", request.statusText);
                         swal("Error", "Ha ocurrido un error en la solicitud. Inténtelo de nuevo.", "error");
                     }
                 }
             };
-            
         }
     }
 }, false);
@@ -166,36 +137,36 @@ function openModal() {
     $('#modalFormComprobantes').modal('show');
 }
 
-function fntViewInfo(idAsiento) {
-    var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
-    var ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
-    request.open("GET", ajaxUrl, true);
-    request.send();
-    request.onreadystatechange = function() {
-        if (request.readyState == 4 && request.status == 200) {
-            var objData = JSON.parse(request.responseText);
-            if (objData.status) {
-                document.querySelector("#celIdComprobante").innerHTML = objData.data.idAsiento;
-                document.querySelector("#celNumeroAsiento").innerHTML = objData.data.numeroasiento;
-                document.querySelector("#celFechaAsiento").innerHTML = objData.data.fechaAsiento;
-                document.querySelector("#celDetalle").innerHTML = objData.data.conceptoOperacion;
-                document.querySelector("#celTipoComprobante").innerHTML = objData.data.tipocomprobante;
-                document.querySelector("#celEstadoTransaccion").innerHTML = objData.data.estadotransaccion;
-                document.querySelector("#celUsuario").innerHTML = objData.data.idUsuarios;
-                document.querySelector("#celStatus").innerHTML = objData.data.status == 1 ? '<span class="badge badge-success">Activo</span>' : '<span class="badge badge-danger">Inactivo</span>';
-                document.querySelector("#celDebe").innerHTML = objData.data.debe;
-                document.querySelector("#celHaber").innerHTML = objData.data.haber;
-                document.querySelector("#celDescripcionLidiario").innerHTML = objData.data.descripcion;
-                document.querySelector("#celCodigoCuenta").innerHTML = objData.data.codigocuenta;
-                document.querySelector("#celNombreCuenta").innerHTML = objData.data.nombrecuenta;
+// function fntViewInfo(idAsiento) {
+//     var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+//     var ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
+//     request.open("GET", ajaxUrl, true);
+//     request.send();
+//     request.onreadystatechange = function() {
+//         if (request.readyState == 4 && request.status == 200) {
+//             var objData = JSON.parse(request.responseText);
+//             if (objData.status) {
+//                 document.querySelector("#celIdComprobante").innerHTML = objData.data.idAsiento;
+//                 document.querySelector("#celNumeroAsiento").innerHTML = objData.data.numeroasiento;
+//                 document.querySelector("#celFechaAsiento").innerHTML = objData.data.fechaAsiento;
+//                 document.querySelector("#celDetalle").innerHTML = objData.data.conceptoOperacion;
+//                 document.querySelector("#celTipoComprobante").innerHTML = objData.data.tipocomprobante;
+//                 document.querySelector("#celEstadoTransaccion").innerHTML = objData.data.estadotransaccion;
+//                 document.querySelector("#celUsuario").innerHTML = objData.data.idUsuarios;
+//                 document.querySelector("#celStatus").innerHTML = objData.data.status == 1 ? '<span class="badge badge-success">Activo</span>' : '<span class="badge badge-danger">Inactivo</span>';
+//                 document.querySelector("#celDebe").innerHTML = objData.data.debe;
+//                 document.querySelector("#celHaber").innerHTML = objData.data.haber;
+//                 document.querySelector("#celDescripcionLidiario").innerHTML = objData.data.descripcion;
+//                 document.querySelector("#celCodigoCuenta").innerHTML = objData.data.codigocuenta;
+//                 document.querySelector("#celNombreCuenta").innerHTML = objData.data.nombrecuenta;
 
-                $('#modalViewComprobante').modal('show');
-            } else {
-                swal("Error", objData.msg, "error");
-            }
-        }
-    }
-}
+//                 $('#modalViewComprobante').modal('show');
+//             } else {
+//                 swal("Error", objData.msg, "error");
+//             }
+//         }
+//     }
+// }
 function fntEditInfo(idAsiento) {
     document.querySelector('#titleModal').innerHTML = "Actualizar Comprobante";
     document.querySelector('.modal-header').classList.replace("headerRegister", "headerUpdate");
@@ -371,5 +342,95 @@ function updateNombreCuenta(rowIndex) {
             }
         }
     };
+}
+
+
+function generatePDF(idAsiento) {
+    var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+    var ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
+    request.open("GET", ajaxUrl, true);
+    request.send();
+    request.onreadystatechange = function() {
+        if (request.readyState == 4 && request.status == 200) {
+            var objData = JSON.parse(request.responseText);
+            if (objData.status) {
+                // Crear un nuevo documento PDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                // Agregar contenido al PDF
+                doc.text('Detalles del Comprobante', 10, 10);
+                doc.text(`ID: ${objData.data.idAsiento}`, 10, 20);
+                doc.text(`Número de Comprobante: ${objData.data.numeroasiento}`, 10, 30);
+                doc.text(`Fecha: ${objData.data.fechaAsiento}`, 10, 40);
+                doc.text(`Detalle: ${objData.data.conceptoOperacion}`, 10, 50);
+                doc.text(`Tipo Comprobante: ${objData.data.tipocomprobante}`, 10, 60);
+                doc.text(`Estado: ${objData.data.estadotransaccion}`, 10, 70);
+                doc.text(`Usuario: ${objData.data.idUsuarios}`, 10, 80);
+                doc.text(`Status: ${objData.data.status == 1 ? 'Activo' : 'Inactivo'}`, 10, 90);
+
+                // Agregar detalles de las cuentas
+                doc.text(`Código Cuenta: ${objData.data.codigocuenta}`, 10, 100);
+                doc.text(`Nombre Cuenta: ${objData.data.nombrecuenta}`, 10, 110);
+                doc.text(`Debe: ${objData.data.debe}`, 10, 120);
+                doc.text(`Haber: ${objData.data.haber}`, 10, 130);
+                doc.text(`Descripción: ${objData.data.descripcion}`, 10, 140);
+
+                // Generar el archivo PDF
+                doc.save(`Comprobante_${idAsiento}.pdf`);
+            } else {
+                swal("Error", objData.msg, "error");
+            }
+        }
+    };
+}
+
+function fntViewInfo(idAsiento) {
+    var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+    var ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
+    request.open("GET", ajaxUrl, true);
+    request.send();
+    request.onreadystatechange = function() {
+        if (request.readyState == 4 && request.status == 200) {
+            var objData = JSON.parse(request.responseText);
+            if (objData.status) {
+                // Mostrar los detalles en el modal
+                document.querySelector("#celIdComprobante").innerHTML = objData.data.idAsiento;
+                document.querySelector("#celNumeroAsiento").innerHTML = objData.data.numeroasiento;
+                document.querySelector("#celFechaAsiento").innerHTML = objData.data.fechaAsiento;
+                document.querySelector("#celDetalle").innerHTML = objData.data.conceptoOperacion;
+                document.querySelector("#celTipoComprobante").innerHTML = objData.data.tipocomprobante;
+                document.querySelector("#celEstadoTransaccion").innerHTML = objData.data.estadotransaccion;
+                document.querySelector("#celUsuario").innerHTML = objData.data.idUsuarios;
+                document.querySelector("#celStatus").innerHTML = objData.data.status == 1 ? '<span class="badge badge-success">Activo</span>' : '<span class="badge badge-danger">Inactivo</span>';
+                document.querySelector("#celDebe").innerHTML = objData.data.debe;
+                document.querySelector("#celHaber").innerHTML = objData.data.haber;
+                document.querySelector("#celDescripcionLidiario").innerHTML = objData.data.descripcion;
+                document.querySelector("#celCodigoCuenta").innerHTML = objData.data.codigocuenta;
+                document.querySelector("#celNombreCuenta").innerHTML = objData.data.nombrecuenta;
+
+                // Mostrar el modal
+                $('#modalViewComprobante').modal('show');
+
+                // Eliminar el botón PDF anterior si existe
+                var existingButton = document.querySelector("#btnDownloadPDF");
+                if (existingButton) {
+                    existingButton.remove();
+                }
+
+                // Crear un nuevo botón para generar el PDF
+                const pdfButton = document.createElement('button');
+                pdfButton.id = "btnDownloadPDF";  // Agregar un ID al botón para evitar duplicación
+                pdfButton.classList.add('btn', 'btn-danger');
+                pdfButton.innerHTML = '<i class="fas fa-file-pdf"></i> Descargar PDF';
+                pdfButton.addEventListener('click', () => generatePDF(idAsiento));
+
+                // Agregar el botón al modal
+                document.querySelector('.modal-footer').appendChild(pdfButton);
+            } else {
+                swal("Error", objData.msg, "error");
+            }
+        }
+    }
 }
 

@@ -1,5 +1,3 @@
-<!-- Modal -->
-<!-- Modal -->
 <div class="modal fade" id="modalFormComprobantes" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -64,6 +62,7 @@
                   <td colspan="3" class="text-right"><strong>Totales:</strong></td>
                   <td id="totalDebe">0.00</td>
                   <td id="totalHaber">0.00</td>
+                  <!-- <div id="alertMessage" style="display:none; color: red;"></div> -->
                   <td colspan="2"></td>
                 </tr>
               </tfoot>
@@ -156,3 +155,4 @@
     </div>
   </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

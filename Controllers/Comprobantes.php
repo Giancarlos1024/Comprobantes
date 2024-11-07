@@ -162,35 +162,22 @@ class Comprobantes extends Controllers
 				die();
 			}
 		}
-		// Obtén los valores del formulario
 		$strNumeroAsientoOriginal = strClean($_POST['txtNumeroAsiento']);
 		$strFechaAsiento = strClean($_POST['txtFechaAsiento']);
 		$strTipoComprobante = strClean($_POST['listComprobante']);
-		// Extrae la primera letra del tipo de comprobante
 		$letraTipoComprobante = strtoupper(substr($strTipoComprobante, 0, 1));
-		// Obtén el mes de la fecha de asiento
-		// $strFechaAsiento = strClean($_POST['txtFechaAsiento']);
-
-		// Intenta primero con el formato 'd/m/Y', luego 'Y-m-d' si falla
 		$fechaAsientoDate = DateTime::createFromFormat('d/m/Y', $strFechaAsiento);
 		if (!$fechaAsientoDate) {
 			$fechaAsientoDate = DateTime::createFromFormat('Y-m-d', $strFechaAsiento);
 		}
-	
-		// Verifica si la fecha fue procesada correctamente en cualquiera de los formatos
+
 		if (!$fechaAsientoDate) {
 			echo json_encode(["status" => false, "msg" => "Formato de fecha inválido. Se esperaba DD/MM/YYYY o YYYY-MM-DD"]);
 			die();
 		}
-	
-		// Continuar usando $fechaAsientoDate en el formato que necesites
 		$mesAsiento = $fechaAsientoDate->format('m');
 		$strNumeroAsiento = "C" . $letraTipoComprobante . $mesAsiento . $strNumeroAsientoOriginal;
-	
-
-		// $strFechaAsiento = strClean($_POST['txtFechaAsiento']);
 		$strConceptoOperacion = strClean($_POST['txtConceptoOperacion']);
-		// $strTipoComprobante = strClean($_POST['listComprobante']);
 		$intEstadoTransaccion = intval($_POST['listStatus']);
 		$intIdUsuario = intval($_POST['idUsuario']);
 		$status = 1; // O cualquier otro valor que necesites
@@ -204,35 +191,51 @@ class Comprobantes extends Controllers
 			$intIdUsuario,
 			$status 
 		);
+
+		// Inicializa las variables de total
+		$totalDebe = 0;
+		$totalHaber = 0;
+	
 		if ($insertResponse['status'] && isset($insertResponse['idAsiento'])) {
 			$idAsiento = $insertResponse['idAsiento'];
-	
+			
 			// Procesar detalles
 			if (!empty($_POST['codigoCuenta'])) {
-				$uniqueCodes = array_unique($_POST['codigoCuenta']); // Asegúrate de que los códigos sean únicos
-				foreach ($uniqueCodes as $key => $codigoCuenta) { // Usar $key para indexar
-					$strNombreCuenta = strClean($_POST['nombreCuenta'][$key]); // Accede por índice
+				$uniqueCodes = array_unique($_POST['codigoCuenta']); // Asegura códigos únicos
+				foreach ($uniqueCodes as $key => $codigoCuenta) {
+					$strNombreCuenta = strClean($_POST['nombreCuenta'][$key]);
 					$intIdCcontables = $this->model->getOrInsertCuenta($codigoCuenta, $strNombreCuenta, $intIdUsuario);
 					
 					if ($intIdCcontables['status']) {
-						$debe = floatval(strClean($_POST['debe'][$key])); // Accede por índice
-						$haber = floatval(strClean($_POST['haber'][$key])); // Accede por índice
-						$descripcion = strClean($_POST['descripcion'][$key]); // Accede por índice
-	
+						$debe = floatval(strClean($_POST['debe'][$key]));
+						$haber = floatval(strClean($_POST['haber'][$key]));
+						$descripcion = strClean($_POST['descripcion'][$key]);
+						
 						$this->model->insertDetalleLidiario($idAsiento, $intIdCcontables['idCcontables'], $debe, $haber, $descripcion, $intIdUsuario);
+	
+						// Calcular totales de debe y haber
+						$totalDebe += $debe;
+						$totalHaber += $haber;
 					} else {
-						ob_clean(); // Limpiar el buffer para evitar salida previa
+						ob_clean();
 						echo json_encode(array("status" => false, "msg" => $intIdCcontables['message']));
 						die();
 					}
 				}
 			}
-			$response = ["status" => true, "idAsiento" => $idAsiento, "message" => "Comprobante insertado correctamente."];
+			
+			$response = [
+				"status" => true,
+				"idAsiento" => $idAsiento,
+				"totalDebe" => $totalDebe,
+				"totalHaber" => $totalHaber,
+				"message" => "Comprobante insertado correctamente."
+			];
 			error_log("Respuesta JSON a enviar: " . json_encode($response));
-			ob_clean(); // Limpiar el buffer para evitar salida previa
-			echo json_encode($response); // Enviar respuesta JSON
+			ob_clean();
+			echo json_encode($response);
 		} else {
-			ob_clean(); // Limpiar el buffer para evitar salida previa
+			ob_clean();
 			echo json_encode(array("status" => false, "msg" => $insertResponse['message']));
 		}
 	}
