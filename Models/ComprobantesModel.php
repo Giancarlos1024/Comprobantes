@@ -140,7 +140,6 @@ class ComprobantesModel extends Mysql
         return $this->select_all($sql);
     }
     
-
     public function selectComprobante(int $idAsiento)
     {
         $this->intIdAsiento = $idAsiento;
@@ -166,21 +165,7 @@ class ComprobantesModel extends Mysql
         $request = $this->select($sql);
         return $request;
     }
-    // public function updateComprobante($idAsiento, $numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios)
-    // {
-    //     try {
-    //         $query_update = "UPDATE conceptooperacion SET numeroasiento = ?, fechaAsiento = ?, conceptoOperacion = ?, tipocomprobante = ?, estadotransaccion = ?, idUsuarios = ? WHERE idAsiento = ?";
-    //         $arrData = array($numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios, $idAsiento);
-    //         $request_update = $this->update($query_update, $arrData);
-    //         if ($request_update) {
-    //             return ["status" => true, "message" => "Comprobante actualizado correctamente."];
-    //         } else {
-    //             return ["status" => false, "message" => "Error al actualizar el comprobante."];
-    //         }
-    //     } catch (PDOException $e) {
-    //         return ["status" => false, "message" => "Error: " . $e->getMessage()];
-    //     }
-    // }
+    
 
     public function updateComprobante($idAsiento, $numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios)
 {

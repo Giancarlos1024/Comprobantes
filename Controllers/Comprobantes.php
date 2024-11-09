@@ -246,30 +246,7 @@ class Comprobantes extends Controllers
 		die();
 	}
 	
-	// public function setUpdateComprobante()
-	// {
-	// 	if ($_POST) {
-	// 		// Validación de campos requeridos
-	// 		$requiredFields = ['idAsiento', 'txtNumeroAsiento', 'txtFechaAsiento', 'txtConceptoOperacion', 'listComprobante', 'listStatus'];
-	// 		foreach ($requiredFields as $field) {
-	// 			if (empty($_POST[$field])) {
-	// 				echo json_encode(array("status" => false, "msg" => 'Faltan datos: ' . $field));
-	// 				die();
-	// 			}
-	// 		}
-	// 		$idAsiento = intval($_POST['idAsiento']);
-	// 		$strNumeroAsiento = strClean($_POST['txtNumeroAsiento']);
-	// 		$strFechaAsiento = strClean($_POST['txtFechaAsiento']);
-	// 		$strConceptoOperacion = strClean($_POST['txtConceptoOperacion']);
-	// 		$strTipoComprobante = strClean($_POST['listComprobante']);
-	// 		$intEstadoTransaccion = intval($_POST['listStatus']);
-	// 		$intIdUsuario = intval($_POST['idUsuario']);
-	// 		$updateResponse = $this->model->updateComprobante($idAsiento, $strNumeroAsiento, $strFechaAsiento, $strConceptoOperacion, $strTipoComprobante, $intEstadoTransaccion, $intIdUsuario);
-	// 		echo json_encode($updateResponse);
-	// 		die();
-	// 	}
-	// }
-
+	
 	public function setUpdateComprobante()
 	{
 		if ($_POST) {

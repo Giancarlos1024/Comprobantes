@@ -137,36 +137,6 @@ function openModal() {
     $('#modalFormComprobantes').modal('show');
 }
 
-// function fntViewInfo(idAsiento) {
-//     var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
-//     var ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
-//     request.open("GET", ajaxUrl, true);
-//     request.send();
-//     request.onreadystatechange = function() {
-//         if (request.readyState == 4 && request.status == 200) {
-//             var objData = JSON.parse(request.responseText);
-//             if (objData.status) {
-//                 document.querySelector("#celIdComprobante").innerHTML = objData.data.idAsiento;
-//                 document.querySelector("#celNumeroAsiento").innerHTML = objData.data.numeroasiento;
-//                 document.querySelector("#celFechaAsiento").innerHTML = objData.data.fechaAsiento;
-//                 document.querySelector("#celDetalle").innerHTML = objData.data.conceptoOperacion;
-//                 document.querySelector("#celTipoComprobante").innerHTML = objData.data.tipocomprobante;
-//                 document.querySelector("#celEstadoTransaccion").innerHTML = objData.data.estadotransaccion;
-//                 document.querySelector("#celUsuario").innerHTML = objData.data.idUsuarios;
-//                 document.querySelector("#celStatus").innerHTML = objData.data.status == 1 ? '<span class="badge badge-success">Activo</span>' : '<span class="badge badge-danger">Inactivo</span>';
-//                 document.querySelector("#celDebe").innerHTML = objData.data.debe;
-//                 document.querySelector("#celHaber").innerHTML = objData.data.haber;
-//                 document.querySelector("#celDescripcionLidiario").innerHTML = objData.data.descripcion;
-//                 document.querySelector("#celCodigoCuenta").innerHTML = objData.data.codigocuenta;
-//                 document.querySelector("#celNombreCuenta").innerHTML = objData.data.nombrecuenta;
-
-//                 $('#modalViewComprobante').modal('show');
-//             } else {
-//                 swal("Error", objData.msg, "error");
-//             }
-//         }
-//     }
-// }
 function fntEditInfo(idAsiento) {
     document.querySelector('#titleModal').innerHTML = "Actualizar Comprobante";
     document.querySelector('.modal-header').classList.replace("headerRegister", "headerUpdate");
@@ -263,15 +233,12 @@ document.querySelector('#addRow').addEventListener('click', function() {
     updateTotals();
 });
 
-
-
 // Función para eliminar una fila
 function removeRow(button) {
     let row = button.parentNode.parentNode;
     row.parentNode.removeChild(row);
     updateTotals();
 }
-
 // Función para actualizar los totales de "Debe" y "Haber"
 function updateTotals() {
     let totalDebe = 0;
@@ -283,8 +250,6 @@ function updateTotals() {
     document.querySelector('#totalDebe').innerText = totalDebe.toFixed(2);
     document.querySelector('#totalHaber').innerText = totalHaber.toFixed(2);
 }
-
-
 function loadCuentaOptions(rowIndex) {
     var request = new XMLHttpRequest();
     var ajaxUrl = base_url + '/Comprobantes/getPlanCuentas'; // Cambia a la ruta correspondiente en tu proyecto
@@ -315,8 +280,6 @@ function loadCuentaOptions(rowIndex) {
         }
     };
 }
-
-
 function updateNombreCuenta(rowIndex) {
     let codigoSelect = document.getElementById(`codigoCuentaSelect${rowIndex}`);
     let nombreSelect = document.getElementById(`nombreCuentaSelect${rowIndex}`);
@@ -344,40 +307,101 @@ function updateNombreCuenta(rowIndex) {
     };
 }
 
-
-function generatePDF(idAsiento) {
+async function generatePDF(idAsiento) {
     var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
     var ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
     request.open("GET", ajaxUrl, true);
     request.send();
-    request.onreadystatechange = function() {
+    request.onreadystatechange = async function() {
         if (request.readyState == 4 && request.status == 200) {
             var objData = JSON.parse(request.responseText);
             if (objData.status) {
-                // Crear un nuevo documento PDF
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
+                // Cargar el PDF de fondo
+                const existingPdfUrl = base_url + '/Assets/modelo_pdf_comprobantes.pdf';
+                const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
 
-                // Agregar contenido al PDF
-                doc.text('Detalles del Comprobante', 10, 10);
-                doc.text(`ID: ${objData.data.idAsiento}`, 10, 20);
-                doc.text(`Número de Comprobante: ${objData.data.numeroasiento}`, 10, 30);
-                doc.text(`Fecha: ${objData.data.fechaAsiento}`, 10, 40);
-                doc.text(`Detalle: ${objData.data.conceptoOperacion}`, 10, 50);
-                doc.text(`Tipo Comprobante: ${objData.data.tipocomprobante}`, 10, 60);
-                doc.text(`Estado: ${objData.data.estadotransaccion}`, 10, 70);
-                doc.text(`Usuario: ${objData.data.idUsuarios}`, 10, 80);
-                doc.text(`Status: ${objData.data.status == 1 ? 'Activo' : 'Inactivo'}`, 10, 90);
+                // Crear un nuevo documento PDF usando el PDF de fondo
+                const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+                const page = pdfDoc.getPage(0); // Usar la primera página como fondo
 
-                // Agregar detalles de las cuentas
-                doc.text(`Código Cuenta: ${objData.data.codigocuenta}`, 10, 100);
-                doc.text(`Nombre Cuenta: ${objData.data.nombrecuenta}`, 10, 110);
-                doc.text(`Debe: ${objData.data.debe}`, 10, 120);
-                doc.text(`Haber: ${objData.data.haber}`, 10, 130);
-                doc.text(`Descripción: ${objData.data.descripcion}`, 10, 140);
+                // Extraer datos del objeto de respuesta para mayor claridad
+                const {
+                    idAsiento,
+                    numeroasiento,
+                    fechaAsiento,
+                    conceptoOperacion,
+                    tipocomprobante,
+                    estadotransaccion,
+                    idUsuarios,
+                    status,
+                    codigocuenta,
+                    nombrecuenta,
+                    debe,
+                    haber,
+                    descripcion
+                } = objData.data;
 
-                // Generar el archivo PDF
-                doc.save(`Comprobante_${idAsiento}.pdf`);
+                let fontBold;
+                try {
+                    // Usar Times-Bold de los valores estándar si está disponible
+                    fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRoman);
+                    if (!fontBold) {
+                        throw new Error("TimesBold no está disponible");
+                    }
+                } catch (e) {
+                    console.error("No se pudo cargar la fuente TimesBold, intentando con Helvetica", e);
+                    try {
+                        // Intentar con Helvetica si TimesBold falla
+                        fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                    } catch (e) {
+                        console.error("No se pudo cargar Helvetica", e);
+                    }
+                }
+
+                // Verificar si se cargó una fuente
+                if (!fontBold) {
+                    console.error("No se pudo cargar ninguna fuente válida");
+                    return;
+                }
+                
+                const formattedDate = formatDate(fechaAsiento);
+                page.drawText(`CONSULTORIA Y CONSTRUCCIONES ORELLANA`, { x: 22, y: 763, size: 12, font: fontBold  });
+                page.drawText(`CHARLES!ORLANDO!ORELLANA!LUJAN`, { x: 37, y: 751, size: 8, font: fontBold  });
+                page.drawText(`6412178014`, { x: 38, y: 742, size: 8, font: fontBold  });
+                page.drawText(`Calle!Londres!S/N!Zona!!Sexta!Parte`, { x: 22, y: 732, size: 8, font: fontBold  });
+                page.drawText(`COCHABAMBA`, { x: 22, y: 724, size: 8, font: fontBold  });
+
+
+                // Agregar texto sobre el PDF de fondo en posiciones específicas
+                page.drawText('BS. 6.96 x USD', { x: 487, y: 736, size: 10, font: fontBold });
+                page.drawText(`${numeroasiento}`, { x: 485, y: 765, size: 10, font: fontBold  });
+                page.drawText(`${formattedDate}`, { x: 475, y: 750, size: 10, font: fontBold  });
+                page.drawText(`${conceptoOperacion}`, { x: 85, y: 688, size: 10 });
+                page.drawText(`${tipocomprobante}`, { x: 305, y: 719, size: 13, font: fontBold  });
+
+                // Agregar detalles de la cuenta
+                page.drawText(`${codigocuenta}`, { x: 85, y: 625, size: 8 });
+                page.drawText(`${nombrecuenta}`, { x: 130, y: 627, size: 6 });
+                page.drawText(`${debe}`, { x: 463, y: 627, size: 8 });
+                page.drawText(`${haber}`, { x: 530, y: 627, size: 8 });
+                page.drawText(`${descripcion}`, { x: 130, y: 618, size: 7 });
+
+                // Si 'debe' y 'haber' son valores individuales
+                let totalDebe = parseFloat(debe) || 0;
+                let totalHaber = parseFloat(haber) || 0;
+
+                // Mostrar los totales en el PDF
+                page.drawText(`CIEN 00/100 Bolivianos`, { x: 33, y: 138, size: 6, font: fontBold });
+                page.drawText(`${totalDebe.toFixed(2)}`, { x: 463, y: 163, size: 8, font: fontBold });
+                page.drawText(`${totalHaber.toFixed(2)}`, { x: 530, y: 163, size: 8, font: fontBold });
+
+                // Guardar el PDF generado
+                const pdfBytes = await pdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: "application/pdf" });
+                const blobUrl = URL.createObjectURL(blob);
+
+                // Abrir el PDF en una nueva pestaña
+                window.open(blobUrl, '_blank');
             } else {
                 swal("Error", objData.msg, "error");
             }
@@ -385,6 +409,14 @@ function generatePDF(idAsiento) {
     };
 }
 
+// Función para formatear la fecha en formato dd-mm-yyyy
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const day = ("0" + date.getDate()).slice(-2);
+    const month = ("0" + (date.getMonth() + 1)).slice(-2);
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+}
 function fntViewInfo(idAsiento) {
     var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
     var ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
@@ -394,20 +426,33 @@ function fntViewInfo(idAsiento) {
         if (request.readyState == 4 && request.status == 200) {
             var objData = JSON.parse(request.responseText);
             if (objData.status) {
-                // Mostrar los detalles en el modal
-                document.querySelector("#celIdComprobante").innerHTML = objData.data.idAsiento;
-                document.querySelector("#celNumeroAsiento").innerHTML = objData.data.numeroasiento;
-                document.querySelector("#celFechaAsiento").innerHTML = objData.data.fechaAsiento;
-                document.querySelector("#celDetalle").innerHTML = objData.data.conceptoOperacion;
-                document.querySelector("#celTipoComprobante").innerHTML = objData.data.tipocomprobante;
-                document.querySelector("#celEstadoTransaccion").innerHTML = objData.data.estadotransaccion;
-                document.querySelector("#celUsuario").innerHTML = objData.data.idUsuarios;
-                document.querySelector("#celStatus").innerHTML = objData.data.status == 1 ? '<span class="badge badge-success">Activo</span>' : '<span class="badge badge-danger">Inactivo</span>';
-                document.querySelector("#celDebe").innerHTML = objData.data.debe;
-                document.querySelector("#celHaber").innerHTML = objData.data.haber;
-                document.querySelector("#celDescripcionLidiario").innerHTML = objData.data.descripcion;
-                document.querySelector("#celCodigoCuenta").innerHTML = objData.data.codigocuenta;
-                document.querySelector("#celNombreCuenta").innerHTML = objData.data.nombrecuenta;
+                // Limpiar el cuerpo de la tabla antes de agregar nuevos datos
+                var tableBody = document.querySelector("#comprobanteDetailsBody");
+                tableBody.innerHTML = '';
+
+                // Mostrar los detalles principales
+                var details = [
+                    { label: "ID", value: objData.data.idAsiento },
+                    { label: "NRO.CBTE", value: objData.data.numeroasiento },
+                    { label: "FECHA", value: objData.data.fechaAsiento },
+                    { label: "DETALLE", value: objData.data.conceptoOperacion },
+                    { label: "TIPO CBTE", value: objData.data.tipocomprobante },
+                    { label: "ESTADO", value: objData.data.estadotransaccion },
+                    { label: "USUARIO", value: objData.data.idUsuarios },
+                    { label: "STATUS", value: objData.data.status == 1 ? '<span class="badge badge-success">Activo</span>' : '<span class="badge badge-danger">Inactivo</span>' },
+                    { label: "Código Cuenta", value: objData.data.codigocuenta },
+                    { label: "Nombre Cuenta", value: objData.data.nombrecuenta },
+                    { label: "Debe", value: objData.data.debe },
+                    { label: "Haber", value: objData.data.haber },
+                    { label: "Descripción Lidiario", value: objData.data.descripcion }
+                ];
+
+                // Agregar filas estáticas
+                details.forEach(function(item) {
+                    var row = document.createElement("tr");
+                    row.innerHTML = "<td>" + item.label + ":</td><td>" + item.value + "</td>";
+                    tableBody.appendChild(row);
+                });
 
                 // Mostrar el modal
                 $('#modalViewComprobante').modal('show');
@@ -433,4 +478,5 @@ function fntViewInfo(idAsiento) {
         }
     }
 }
+
 

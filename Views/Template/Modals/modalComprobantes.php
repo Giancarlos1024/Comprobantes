@@ -91,61 +91,8 @@
       </div>
       <div class="modal-body">
         <table class="table table-bordered">
-          <tbody>
-            <tr>
-              <td>ID:</td>
-              <td id="celIdComprobante"></td>
-            </tr>
-            <tr>
-              <td>NRO.CBTE:</td>
-              <td id="celNumeroAsiento"></td>
-            </tr>
-            <tr>
-              <td>FECHA:</td>
-              <td id="celFechaAsiento"></td>
-            </tr>
-            <tr>
-              <td>DETALLE:</td>
-              <td id="celDetalle"></td>
-            </tr>
-            <tr>
-              <td>TIPO CBTE:</td>
-              <td id="celTipoComprobante"></td>
-            </tr>
-            <tr>
-              <td>ESTADO:</td>
-              <td id="celEstadoTransaccion"></td>
-            </tr>
-            <tr>
-              <td>USUARIO:</td>
-              <td id="celUsuario"></td>
-            </tr>
-            <tr>
-              <td>STATUS:</td>
-              <td id="celStatus"></td>
-            </tr>
-            <tr>
-            <tr>
-              <td>Código Cuenta:</td>
-              <td id="celCodigoCuenta"></td>
-            </tr>
-            <tr>
-              <td>Nombre Cuenta:</td>
-              <td id="celNombreCuenta"></td>
-            </tr>
-            <td>Debe:</td>
-              <td id="celDebe"></td>
-            </tr>
-            <tr>
-              <td>Haber:</td>
-              <td id="celHaber"></td>
-            </tr>
-            <tr>
-              <td>Descripción Lidiario:</td>
-              <td id="celDescripcionLidiario"></td>
-            </tr>
-
-
+          <tbody id="comprobanteDetailsBody">
+            <!-- Aquí se agregarán las filas dinámicamente -->
           </tbody>
         </table>
       </div>
@@ -155,4 +102,6 @@
     </div>
   </div>
 </div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
