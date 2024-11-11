@@ -185,6 +185,24 @@ class ComprobantesModel extends Mysql
 }
 
     
+public function selectConfiguraEmpresa() {
+    try {
+        // Consulta para obtener los datos de la tabla configuraempresa
+        $sql = "SELECT direccion, fechafinfiscal, fechainiciofiscal, idconfigura, nit, nombrereplegal, razonsocial, status FROM configuraempresa";
+        $request = $this->select_all($sql);
+
+        // Log para verificar el resultado de la consulta
+        error_log("Resultado de la consulta selectConfiguraEmpresa: " . json_encode($request));
+
+        return $request; // Retorna los datos obtenidos de la consulta
+    } catch (PDOException $e) {
+        error_log("Error en selectConfiguraEmpresa: " . $e->getMessage());
+        return ["status" => false, "message" => "Error en la base de datos: " . $e->getMessage()];
+    }
+}
+
+
+
 
     public function updateComprobante($idAsiento, $numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios)
 {

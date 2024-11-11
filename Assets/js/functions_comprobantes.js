@@ -306,125 +306,135 @@ function updateNombreCuenta(rowIndex) {
         }
     };
 }
+
+// Función para convertir un número en letras (simplificado)
+function numeroALetras(num) {
+    const unidades = ["", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE"];
+    const decenas = ["", "", "VEINTE", "TREINTA", "CUARENTA", "CINCUENTA", "SESENTA", "SETENTA", "OCHENTA", "NOVENTA"];
+    const especiales = ["DIEZ", "ONCE", "DOCE", "TRECE", "CATORCE", "QUINCE", "DIECISEIS", "DIECISIETE", "DIECIOCHO", "DIECINUEVE"];
+    const centenas = ["", "CIENTO", "DOSCIENTOS", "TRESCIENTOS", "CUATROCIENTOS", "QUINIENTOS", "SEISCIENTOS", "SETECIENTOS", "OCHOCIENTOS", "NOVECIENTOS"];
+    const miles = ["", "MIL"];
+
+    if (num === 100) return "CIEN"; // Para el número 100
+    if (num < 10) return unidades[num];
+    if (num < 20) return especiales[num - 10];
+    if (num < 100) {
+        const unidad = num % 10;
+        return `${decenas[Math.floor(num / 10)]}${unidad ? " Y " + unidades[unidad] : ""}`;
+    }
+    if (num < 1000) {
+        const decena = num % 100;
+        const centena = Math.floor(num / 100);
+        return `${centenas[centena]}${decena ? " " + numeroALetras(decena) : ""}`;
+    }
+    if (num < 100000) {
+        const mil = Math.floor(num / 1000);
+        const resto = num % 1000;
+        return `${numeroALetras(mil)} MIL${resto ? " " + numeroALetras(resto) : ""}`;
+    }
+    // Agregar más casos si es necesario (para números más grandes)
+    return "";
+}
+
+function convertirMontoALetras(monto) {
+    const enteros = Math.floor(monto);
+    const decimales = Math.round((monto - enteros) * 100);  // Asegurarse de que los decimales sean 2 dígitos
+    const parteEnteraEnLetras = numeroALetras(enteros);
+
+    // Si el monto es entero y no tiene decimales, poner '00/100'
+    const decimalesTexto = decimales < 10 ? `0${decimales}` : decimales.toString();
+
+    return `${parteEnteraEnLetras} ${decimalesTexto}/100 Bolivianos`;
+}
+
+
 async function generatePDF(idAsiento) {
-    var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
-    var ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
-    request.open("GET", ajaxUrl, true);
-    request.send();
-    request.onreadystatechange = async function() {
-        if (request.readyState == 4 && request.status == 200) {
-            var objData = JSON.parse(request.responseText);
-            if (objData.status) {
-                // Cargar el PDF de fondo
-                const existingPdfUrl = base_url + '/Assets/pdf_actualizado.pdf';
-                const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
+    try {
+        // Obtener configuración de la empresa
+        const empresaData = await fetchEmpresaConfig();
 
-                // Crear un nuevo documento PDF usando el PDF de fondo
-                const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
-                const page = pdfDoc.getPage(0); // Usar la primera página como fondo
+        // Solicitud para obtener el comprobante
+        const request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+        const ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
+        request.open("GET", ajaxUrl, true);
+        request.send();
 
-                // Asegúrate de acceder a todos los registros
-                const comprobantes = objData.data;  // Array con todos los registros
-        
+        request.onreadystatechange = async function() {
+            if (request.readyState == 4 && request.status == 200) {
+                const objData = JSON.parse(request.responseText);
+                if (objData.status) {
+                    // Cargar PDF base y configurar
+                    const existingPdfUrl = base_url + '/Assets/pdf_actualizado.pdf';
+                    const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
+                    const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+                    const page = pdfDoc.getPage(0);
 
-                let fontBold;
-                try {
-                    fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRoman);
-                    if (!fontBold) {
-                        throw new Error("TimesBold no está disponible");
-                    }
-                } catch (e) {
-                    console.error("No se pudo cargar la fuente TimesBold, intentando con Helvetica", e);
-                    try {
-                        fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-                    } catch (e) {
-                        console.error("No se pudo cargar Helvetica", e);
-                    }
+                    // Fuente
+                    const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+
+                    // Datos de empresa
+                    const { direccion, nit, nombrereplegal, razonsocial } = empresaData[0];
+                    page.drawText(`${razonsocial}`, { x: 22, y: 763, size: 12, font: fontBold });
+                    page.drawText(`${nombrereplegal}`, { x: 37, y: 751, size: 8, font: fontBold });
+                    page.drawText(`${nit}`, { x: 38, y: 742, size: 8, font: fontBold });
+                    page.drawText(`${direccion}`, { x: 22, y: 732, size: 8, font: fontBold });
+
+                    // Datos del comprobante
+                    const firstComprobante = objData.data[0];
+                    const { numeroasiento, fechaAsiento, conceptoOperacion, tipocomprobante } = firstComprobante;
+                    const formattedDate = formatDate(fechaAsiento);
+
+                    page.drawText(`${numeroasiento}`, { x: 485, y: 764, size: 9, font: fontBold });
+                    page.drawText(`${formattedDate}`, { x: 475, y: 750, size: 9, font: fontBold });
+                    page.drawText(` BS. 6.96 x USD`, { x: 485, y: 736, size: 9, font: fontBold });
+                    page.drawText(`${conceptoOperacion}`, { x: 85, y: 686, size: 10 });
+                    page.drawText(`${tipocomprobante}`, { x: 303, y: 720, size: 12, font: fontBold });
+
+                    // Detalles del comprobante
+                    let yOffset = 665;
+                    objData.data.forEach((comprobante) => {
+                        const { codigocuenta, nombrecuenta, debe, haber, descripcion } = comprobante;
+                        page.drawText(`${codigocuenta}`, { x: 85, y: yOffset - 45, size: 8 });
+                        page.drawText(`${nombrecuenta}`, { x: 130, y: yOffset - 43, size: 6 });
+                        page.drawText(`${debe}`, { x: 463, y: yOffset - 43, size: 8 });
+                        page.drawText(`${haber}`, { x: 530, y: yOffset - 43, size: 8 });
+                        page.drawText(`${descripcion}`, { x: 130, y: yOffset - 52, size: 7 });
+                        yOffset -= 20;
+                    });
+
+                    // Totales
+                    let totalDebe = 0, totalHaber = 0;
+                    objData.data.forEach((comprobante) => {
+                        totalDebe += parseFloat(comprobante.debe) || 0;
+                        totalHaber += parseFloat(comprobante.haber) || 0;
+                    });
+
+                    // Convertir los totales a letras
+                    const totalDebeEnLetras = convertirMontoALetras(totalDebe);
+                    const totalHaberEnLetras = convertirMontoALetras(totalHaber);
+
+                    // Agregar los totales en letras en el PDF
+                    page.drawText(totalDebeEnLetras, { x: 33, y: 135.5, size: 7, font: fontBold });  // Total 'Debe' en letras
+                    // page.drawText(totalHaberEnLetras, { x: 33, y: 125.5, size: 7, font: fontBold }); // Total 'Haber' en letras
+
+                    // Agregar los totales numéricos en el PDF
+                    page.drawText(`${totalDebe.toFixed(2)}`, { x: 463, y: 163, size: 8, font: fontBold });
+                    page.drawText(`${totalHaber.toFixed(2)}`, { x: 530, y: 163, size: 8, font: fontBold });
+
+                    // Guardar el PDF generado
+                    const pdfBytes = await pdfDoc.save();
+                    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+                    const blobUrl = URL.createObjectURL(blob);
+                    window.open(blobUrl, '_blank');
+                } else {
+                    swal("Error", objData.msg, "error");
                 }
-
-                // Verificar si se cargó una fuente
-                if (!fontBold) {
-                    console.error("No se pudo cargar ninguna fuente válida");
-                    return;
-                }
-
-                // Obtener los primeros datos que solo se deben mostrar una vez
-                const firstComprobante = comprobantes[0]; // Usar el primer detalle para obtener datos generales
-                const {
-                    numeroasiento,
-                    fechaAsiento,
-                    conceptoOperacion,
-                    tipocomprobante,
-                    estadotransaccion,
-                    idUsuarios,
-                    status
-                } = firstComprobante;
-
-                const formattedDate = formatDate(fechaAsiento);
-
-                // Agregar los datos generales solo una vez
-                page.drawText(`CONSULTORIA Y CONSTRUCCIONES ORELLANA`, { x: 22, y: 763, size: 12, font: fontBold });
-                page.drawText(`CHARLES!ORLANDO!ORELLANA!LUJAN`, { x: 37, y: 751, size: 8, font: fontBold });
-                page.drawText(`6412178014`, { x: 38, y: 742, size: 8, font: fontBold });
-                page.drawText(`Calle!Londres!S/N!Zona!!Sexta!Parte`, { x: 22, y: 732, size: 8, font: fontBold });
-                page.drawText(`COCHABAMBA`, { x: 22, y: 724, size: 8, font: fontBold });
-
-                page.drawText(`${numeroasiento}`, { x: 485, y: 764, size: 10, font: fontBold });
-                page.drawText(`${formattedDate}`, { x: 475, y: 750, size: 10, font: fontBold });
-                page.drawText(`${conceptoOperacion}`, { x: 85, y: 685, size: 10 });
-                page.drawText(`${tipocomprobante}`, { x: 303, y: 720, size: 12, font: fontBold });
-
-
-                page.drawText(`BS. 6.96 x USD`, { x: 486, y: 736, size: 10, font: fontBold });
-
-
-                let yOffset = 665;  // Ajusta la posición inicial para el primer registro
-
-                // Iterar sobre todos los detalles y agregarlos al PDF
-                for (let i = 0; i < comprobantes.length; i++) {
-                    const comprobante = comprobantes[i];
-                    const {
-                        codigocuenta,
-                        nombrecuenta,
-                        debe,
-                        haber,
-                        descripcion
-                    } = comprobante;
-
-                    // Agregar los detalles al PDF
-                    page.drawText(`${codigocuenta}`, { x: 85, y: yOffset - 45, size: 8 });
-                    page.drawText(`${nombrecuenta}`, { x: 130, y: yOffset - 43, size: 6 });
-                    page.drawText(`${debe}`, { x: 463, y: yOffset - 43, size: 8 });
-                    page.drawText(`${haber}`, { x: 530, y: yOffset - 43, size: 8 });
-                    page.drawText(`${descripcion}`, { x: 130, y: yOffset - 52, size: 7 });
-
-                    yOffset -= 20;  // Desplazar la posición para el siguiente detalle
-                }
-
-                // Agregar los totales
-                let totalDebe = 0;
-                let totalHaber = 0;
-                for (let i = 0; i < comprobantes.length; i++) {
-                    totalDebe += parseFloat(comprobantes[i].debe) || 0;
-                    totalHaber += parseFloat(comprobantes[i].haber) || 0;
-                }
-
-                page.drawText(`CIEN 00/100 Bolivianos`, { x: 33, y: 137, size: 6, font: fontBold });
-                page.drawText(`${totalDebe.toFixed(2)}`, { x: 463, y: 163, size: 8, font: fontBold });
-                page.drawText(`${totalHaber.toFixed(2)}`, { x: 530, y: 163, size: 8, font: fontBold });
-
-                // Guardar el PDF generado
-                const pdfBytes = await pdfDoc.save();
-                const blob = new Blob([pdfBytes], { type: "application/pdf" });
-                const blobUrl = URL.createObjectURL(blob);
-
-                // Abrir el PDF en una nueva pestaña
-                window.open(blobUrl, '_blank');
-            } else {
-                swal("Error", objData.msg, "error");
             }
-        }
-    };
+        };
+    } catch (error) {
+        console.error("Error al generar el PDF:", error);
+        swal("Error", "No se pudo obtener la configuración de la empresa.", "error");
+    }
 }
 
 // Función para formatear la fecha en formato dd-mm-yyyy
@@ -434,6 +444,27 @@ function formatDate(dateString) {
     const month = ("0" + (date.getMonth() + 1)).slice(-2);
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
+}
+
+
+async function fetchEmpresaConfig() {
+    const request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+    const ajaxUrl = base_url + '/Comprobantes/getConfiguraEmpresa';
+    request.open("GET", ajaxUrl, true);
+    request.send();
+
+    return new Promise((resolve, reject) => {
+        request.onreadystatechange = function() {
+            if (request.readyState == 4 && request.status == 200) {
+                const objData = JSON.parse(request.responseText);
+                if (objData.status) {
+                    resolve(objData.data);
+                } else {
+                    reject("No se pudo obtener la configuración de la empresa.");
+                }
+            }
+        };
+    });
 }
 
 

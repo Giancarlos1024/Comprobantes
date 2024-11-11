@@ -62,6 +62,17 @@ class Comprobantes extends Controllers
 		echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
 		die();
 	}
+	public function getConfiguraEmpresa() {
+		$arrData = $this->model->selectConfiguraEmpresa();
+		if (empty($arrData)) {
+			$arrResponse = array('status' => false, 'msg' => 'Configuración de la empresa no encontrada.');
+		} else {
+			$arrResponse = array('status' => true, 'data' => $arrData);
+		}
+		echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
+		die();
+	}
+	
 	public function getConfigura($idconfigura)
 	{
 		$intConfigura = intval($idconfigura);
