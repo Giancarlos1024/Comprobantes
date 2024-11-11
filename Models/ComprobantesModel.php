@@ -143,28 +143,47 @@ class ComprobantesModel extends Mysql
     public function selectComprobante(int $idAsiento)
     {
         $this->intIdAsiento = $idAsiento;
-        $sql = "SELECT 
-                    co.idAsiento, 
-                    co.numeroasiento, 
-                    co.fechaAsiento, 
-                    co.conceptoOperacion, 
-                    co.tipocomprobante, 
-                    co.estadotransaccion, 
-                    co.idUsuarios, 
-                    co.status, 
-                    ld.idLidiario, 
-                    ld.debe, 
-                    ld.haber, 
-                    ld.descripcion, 
-                    pc.codigocuenta, 
-                    pc.nombrecuenta 
-                FROM conceptooperacion AS co 
-                LEFT JOIN lidiario AS ld ON co.idAsiento = ld.idAsiento 
-                LEFT JOIN plancuentas AS pc ON ld.idCcontables = pc.idCcontables 
-                WHERE co.idAsiento = $this->intIdAsiento";
-        $request = $this->select($sql);
-        return $request;
+        // Obtén todos los registros que coinciden con el idAsiento
+    $query = "SELECT 
+    co.idAsiento, 
+    co.numeroasiento, 
+    co.fechaAsiento, 
+    co.conceptoOperacion, 
+    co.tipocomprobante, 
+    co.estadotransaccion, 
+    co.idUsuarios, 
+    co.status, 
+    ld.idLidiario, 
+    ld.debe, 
+    ld.haber, 
+    ld.descripcion, 
+    pc.codigocuenta, 
+    pc.nombrecuenta 
+    FROM conceptooperacion AS co 
+    LEFT JOIN lidiario AS ld ON co.idAsiento = ld.idAsiento 
+    LEFT JOIN plancuentas AS pc ON ld.idCcontables = pc.idCcontables 
+    WHERE co.idAsiento = $this->intIdAsiento";
+
+    // Usa select_all en lugar de select
+    $request = $this->select_all($query); // Esto devolverá todos los resultados como un arreglo
+
+
+    // Log de la respuesta de la consulta
+    error_log("Respuesta de la consulta: " . print_r($request, true));
+
+    if (empty($request)) {
+        $arrResponse = array('status' => false, 'msg' => 'Comprobante no encontrado.');
+    } else {
+        $arrResponse = array('status' => true, 'data' => $request);  // Asegúrate de que 'data' sea un arreglo
     }
+
+    // Log de la respuesta final
+    error_log("Respuesta final enviada al frontend: " . print_r($arrResponse, true));
+
+    echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
+    die();
+}
+
     
 
     public function updateComprobante($idAsiento, $numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios)

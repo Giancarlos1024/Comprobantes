@@ -306,7 +306,6 @@ function updateNombreCuenta(rowIndex) {
         }
     };
 }
-
 async function generatePDF(idAsiento) {
     var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
     var ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
@@ -317,33 +316,19 @@ async function generatePDF(idAsiento) {
             var objData = JSON.parse(request.responseText);
             if (objData.status) {
                 // Cargar el PDF de fondo
-                const existingPdfUrl = base_url + '/Assets/modelo_pdf_comprobantes.pdf';
+                const existingPdfUrl = base_url + '/Assets/pdf_actualizado.pdf';
                 const existingPdfBytes = await fetch(existingPdfUrl).then(res => res.arrayBuffer());
 
                 // Crear un nuevo documento PDF usando el PDF de fondo
                 const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
                 const page = pdfDoc.getPage(0); // Usar la primera página como fondo
 
-                // Extraer datos del objeto de respuesta para mayor claridad
-                const {
-                    idAsiento,
-                    numeroasiento,
-                    fechaAsiento,
-                    conceptoOperacion,
-                    tipocomprobante,
-                    estadotransaccion,
-                    idUsuarios,
-                    status,
-                    codigocuenta,
-                    nombrecuenta,
-                    debe,
-                    haber,
-                    descripcion
-                } = objData.data;
+                // Asegúrate de acceder a todos los registros
+                const comprobantes = objData.data;  // Array con todos los registros
+        
 
                 let fontBold;
                 try {
-                    // Usar Times-Bold de los valores estándar si está disponible
                     fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRoman);
                     if (!fontBold) {
                         throw new Error("TimesBold no está disponible");
@@ -351,7 +336,6 @@ async function generatePDF(idAsiento) {
                 } catch (e) {
                     console.error("No se pudo cargar la fuente TimesBold, intentando con Helvetica", e);
                     try {
-                        // Intentar con Helvetica si TimesBold falla
                         fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                     } catch (e) {
                         console.error("No se pudo cargar Helvetica", e);
@@ -363,35 +347,69 @@ async function generatePDF(idAsiento) {
                     console.error("No se pudo cargar ninguna fuente válida");
                     return;
                 }
-                
+
+                // Obtener los primeros datos que solo se deben mostrar una vez
+                const firstComprobante = comprobantes[0]; // Usar el primer detalle para obtener datos generales
+                const {
+                    numeroasiento,
+                    fechaAsiento,
+                    conceptoOperacion,
+                    tipocomprobante,
+                    estadotransaccion,
+                    idUsuarios,
+                    status
+                } = firstComprobante;
+
                 const formattedDate = formatDate(fechaAsiento);
-                page.drawText(`CONSULTORIA Y CONSTRUCCIONES ORELLANA`, { x: 22, y: 763, size: 12, font: fontBold  });
-                page.drawText(`CHARLES!ORLANDO!ORELLANA!LUJAN`, { x: 37, y: 751, size: 8, font: fontBold  });
-                page.drawText(`6412178014`, { x: 38, y: 742, size: 8, font: fontBold  });
-                page.drawText(`Calle!Londres!S/N!Zona!!Sexta!Parte`, { x: 22, y: 732, size: 8, font: fontBold  });
-                page.drawText(`COCHABAMBA`, { x: 22, y: 724, size: 8, font: fontBold  });
+
+                // Agregar los datos generales solo una vez
+                page.drawText(`CONSULTORIA Y CONSTRUCCIONES ORELLANA`, { x: 22, y: 763, size: 12, font: fontBold });
+                page.drawText(`CHARLES!ORLANDO!ORELLANA!LUJAN`, { x: 37, y: 751, size: 8, font: fontBold });
+                page.drawText(`6412178014`, { x: 38, y: 742, size: 8, font: fontBold });
+                page.drawText(`Calle!Londres!S/N!Zona!!Sexta!Parte`, { x: 22, y: 732, size: 8, font: fontBold });
+                page.drawText(`COCHABAMBA`, { x: 22, y: 724, size: 8, font: fontBold });
+
+                page.drawText(`${numeroasiento}`, { x: 485, y: 764, size: 10, font: fontBold });
+                page.drawText(`${formattedDate}`, { x: 475, y: 750, size: 10, font: fontBold });
+                page.drawText(`${conceptoOperacion}`, { x: 85, y: 685, size: 10 });
+                page.drawText(`${tipocomprobante}`, { x: 303, y: 720, size: 12, font: fontBold });
 
 
-                // Agregar texto sobre el PDF de fondo en posiciones específicas
-                page.drawText('BS. 6.96 x USD', { x: 487, y: 736, size: 10, font: fontBold });
-                page.drawText(`${numeroasiento}`, { x: 485, y: 765, size: 10, font: fontBold  });
-                page.drawText(`${formattedDate}`, { x: 475, y: 750, size: 10, font: fontBold  });
-                page.drawText(`${conceptoOperacion}`, { x: 85, y: 688, size: 10 });
-                page.drawText(`${tipocomprobante}`, { x: 305, y: 719, size: 13, font: fontBold  });
+                page.drawText(`BS. 6.96 x USD`, { x: 486, y: 736, size: 10, font: fontBold });
 
-                // Agregar detalles de la cuenta
-                page.drawText(`${codigocuenta}`, { x: 85, y: 625, size: 8 });
-                page.drawText(`${nombrecuenta}`, { x: 130, y: 627, size: 6 });
-                page.drawText(`${debe}`, { x: 463, y: 627, size: 8 });
-                page.drawText(`${haber}`, { x: 530, y: 627, size: 8 });
-                page.drawText(`${descripcion}`, { x: 130, y: 618, size: 7 });
 
-                // Si 'debe' y 'haber' son valores individuales
-                let totalDebe = parseFloat(debe) || 0;
-                let totalHaber = parseFloat(haber) || 0;
+                let yOffset = 665;  // Ajusta la posición inicial para el primer registro
 
-                // Mostrar los totales en el PDF
-                page.drawText(`CIEN 00/100 Bolivianos`, { x: 33, y: 138, size: 6, font: fontBold });
+                // Iterar sobre todos los detalles y agregarlos al PDF
+                for (let i = 0; i < comprobantes.length; i++) {
+                    const comprobante = comprobantes[i];
+                    const {
+                        codigocuenta,
+                        nombrecuenta,
+                        debe,
+                        haber,
+                        descripcion
+                    } = comprobante;
+
+                    // Agregar los detalles al PDF
+                    page.drawText(`${codigocuenta}`, { x: 85, y: yOffset - 45, size: 8 });
+                    page.drawText(`${nombrecuenta}`, { x: 130, y: yOffset - 43, size: 6 });
+                    page.drawText(`${debe}`, { x: 463, y: yOffset - 43, size: 8 });
+                    page.drawText(`${haber}`, { x: 530, y: yOffset - 43, size: 8 });
+                    page.drawText(`${descripcion}`, { x: 130, y: yOffset - 52, size: 7 });
+
+                    yOffset -= 20;  // Desplazar la posición para el siguiente detalle
+                }
+
+                // Agregar los totales
+                let totalDebe = 0;
+                let totalHaber = 0;
+                for (let i = 0; i < comprobantes.length; i++) {
+                    totalDebe += parseFloat(comprobantes[i].debe) || 0;
+                    totalHaber += parseFloat(comprobantes[i].haber) || 0;
+                }
+
+                page.drawText(`CIEN 00/100 Bolivianos`, { x: 33, y: 137, size: 6, font: fontBold });
                 page.drawText(`${totalDebe.toFixed(2)}`, { x: 463, y: 163, size: 8, font: fontBold });
                 page.drawText(`${totalHaber.toFixed(2)}`, { x: 530, y: 163, size: 8, font: fontBold });
 
@@ -417,6 +435,9 @@ function formatDate(dateString) {
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
 }
+
+
+
 function fntViewInfo(idAsiento) {
     var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
     var ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
@@ -425,34 +446,57 @@ function fntViewInfo(idAsiento) {
     request.onreadystatechange = function() {
         if (request.readyState == 4 && request.status == 200) {
             var objData = JSON.parse(request.responseText);
+            console.log(objData);  // Verifica la respuesta del servidor
+
             if (objData.status) {
                 // Limpiar el cuerpo de la tabla antes de agregar nuevos datos
                 var tableBody = document.querySelector("#comprobanteDetailsBody");
                 tableBody.innerHTML = '';
 
-                // Mostrar los detalles principales
+                // Mostrar los detalles principales (sin cambios)
                 var details = [
-                    { label: "ID", value: objData.data.idAsiento },
-                    { label: "NRO.CBTE", value: objData.data.numeroasiento },
-                    { label: "FECHA", value: objData.data.fechaAsiento },
-                    { label: "DETALLE", value: objData.data.conceptoOperacion },
-                    { label: "TIPO CBTE", value: objData.data.tipocomprobante },
-                    { label: "ESTADO", value: objData.data.estadotransaccion },
-                    { label: "USUARIO", value: objData.data.idUsuarios },
-                    { label: "STATUS", value: objData.data.status == 1 ? '<span class="badge badge-success">Activo</span>' : '<span class="badge badge-danger">Inactivo</span>' },
-                    { label: "Código Cuenta", value: objData.data.codigocuenta },
-                    { label: "Nombre Cuenta", value: objData.data.nombrecuenta },
-                    { label: "Debe", value: objData.data.debe },
-                    { label: "Haber", value: objData.data.haber },
-                    { label: "Descripción Lidiario", value: objData.data.descripcion }
+                    { label: "ID", value: objData.data[0].idAsiento },  // Accede al primer registro
+                    { label: "NRO.CBTE", value: objData.data[0].numeroasiento },
+                    { label: "FECHA", value: objData.data[0].fechaAsiento },
+                    { label: "DETALLE", value: objData.data[0].conceptoOperacion },
+                    { label: "TIPO CBTE", value: objData.data[0].tipocomprobante },
+                    { label: "ESTADO", value: objData.data[0].estadotransaccion },
+                    { label: "USUARIO", value: objData.data[0].idUsuarios },
+                    { label: "STATUS", value: objData.data[0].status == 1 ? '<span class="badge badge-success">Activo</span>' : '<span class="badge badge-danger">Inactivo</span>' }
                 ];
 
-                // Agregar filas estáticas
+                // Agregar filas estáticas para los detalles principales
                 details.forEach(function(item) {
                     var row = document.createElement("tr");
                     row.innerHTML = "<td>" + item.label + ":</td><td>" + item.value + "</td>";
                     tableBody.appendChild(row);
                 });
+
+                // Verificar si hay registros en lidiario
+                if (Array.isArray(objData.data)) {
+                    objData.data.forEach(function(ld) {
+                        // Crear filas para cada registro de lidiario
+                        var rows = [
+                            { label: "Código Cuenta", value: ld.codigocuenta },
+                            { label: "Nombre Cuenta", value: ld.nombrecuenta },
+                            { label: "Debe", value: ld.debe },
+                            { label: "Haber", value: ld.haber },
+                            { label: "Descripción Lidiario", value: ld.descripcion }
+                        ];
+
+                        // Agregar filas para cada uno de los registros de lidiario
+                        rows.forEach(function(item) {
+                            var row = document.createElement("tr");
+                            row.innerHTML = "<td>" + item.label + ":</td><td>" + item.value + "</td>";
+                            tableBody.appendChild(row);
+                        });
+                    });
+                } else {
+                    // Si no hay registros de lidiario, muestra un mensaje
+                    var row = document.createElement("tr");
+                    row.innerHTML = "<td colspan='2'>No hay registros de Lidiario disponibles.</td>";
+                    tableBody.appendChild(row);
+                }
 
                 // Mostrar el modal
                 $('#modalViewComprobante').modal('show');
@@ -478,5 +522,3 @@ function fntViewInfo(idAsiento) {
         }
     }
 }
-
-
