@@ -431,7 +431,7 @@ CREATE TABLE `plancuentas` (
 --
 
 INSERT INTO `plancuentas` (`idCcontables`, `codigocuenta`, `codigopuc`, `descripcion`, `rubro`, `fechaderegistro`, `fechaactualizacion`, `idUsuario`, `status`) VALUES
-(1, 1, 1, 'A C T I V O S                                                                             ', 'Activo', 'CURRENT_TIMESTAMP', NULL, 0, 1),
+(1, 1, 1, 'ACTIVOS                                                                             ', 'Activo', 'CURRENT_TIMESTAMP', NULL, 0, 1),
 (2, 1, 11, 'ACTIVOS CORRIENTES                                                                        ', 'Activo', 'CURRENT_TIMESTAMP', NULL, 0, 1),
 (3, 1, 111, 'EFECTIVO Y EQUIVALENTES DE EFECTIVO                                                       ', 'Activo', 'CURRENT_TIMESTAMP', NULL, 0, 1),
 (4, 1, 111001, 'CAJA                                                                                      ', 'Activo', 'CURRENT_TIMESTAMP', NULL, 0, 1),
