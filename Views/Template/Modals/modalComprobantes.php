@@ -1,5 +1,6 @@
+<!-- Modal para Comprobantes -->
 <div class="modal fade" id="modalFormComprobantes" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-xl"">
+  <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header headerRegister">
         <h5 class="modal-title" id="titleModal">Nuevo Comprobante</h5>
@@ -9,17 +10,15 @@
       </div>
       <div class="modal-body">
         <form id="formComprobantes" name="formComprobantes" class="form-horizontal">
-          
-          
           <p class="text-primary">Todos los campos son obligatorios.</p>
           <div class="form-row">
             <div class="form-group col-md-2">
               <label for="txtNumeroAsiento">Número Asiento</label>
-              <input type="text" class="form-control" id="txtNumeroAsiento" name="txtNumeroAsiento" required="">
+              <input type="text" class="form-control" id="txtNumeroAsiento" name="txtNumeroAsiento" required>
             </div>
             <div class="form-group col-md-3">
               <label for="txtFechaAsiento">Fecha Asiento</label>
-              <input type="date" class="form-control" id="txtFechaAsiento" name="txtFechaAsiento" required="">
+              <input type="date" class="form-control" id="txtFechaAsiento" name="txtFechaAsiento" required>
             </div>
             <div class="form-group col-md-3">
               <label for="listComprobante">Tipo de Comprobante</label>
@@ -39,7 +38,7 @@
             </div>
             <div class="form-group col-md-12">
               <label for="txtConceptoOperacion">Concepto Operación</label>
-              <input type="text" class="form-control" id="txtConceptoOperacion" name="txtConceptoOperacion" required="">
+              <input type="text" class="form-control" id="txtConceptoOperacion" name="txtConceptoOperacion" required>
             </div>
           </div>
           <div class="table-responsive mt-4">
@@ -62,7 +61,6 @@
                   <td colspan="3" class="text-right"><strong>Totales:</strong></td>
                   <td id="totalDebe">0.00</td>
                   <td id="totalHaber">0.00</td>
-                  <!-- <div id="alertMessage" style="display:none; color: red;"></div> -->
                   <td colspan="2"></td>
                 </tr>
               </tfoot>
@@ -80,83 +78,83 @@
 </div>
 
 <div class="modal fade" id="modalFormComprobantesUpdate" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header headerUpdate">
-        <h5 class="modal-title" id="titleModalUpdate">Actualizar Comprobante</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <form id="formComprobantesUpdate" name="formComprobantesUpdate" class="form-horizontal">
-          
-          <p class="text-primary">Todos los campos son obligatorios.</p>
-          <div class="form-row">
-            <div class="form-group col-md-2">
-              <label for="txtNumeroAsientoUpdate">Número Asiento</label>
-              <input type="text" class="form-control" id="txtNumeroAsientoUpdate" name="txtNumeroAsiento" required="" disabled>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header headerUpdate">
+                <h5 class="modal-title" id="titleModalUpdate">Actualizar Comprobante</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-            <div class="form-group col-md-3">
-              <label for="txtFechaAsientoUpdate">Fecha Asiento</label>
-              <input type="date" class="form-control" id="txtFechaAsientoUpdate" name="txtFechaAsiento" required="">
+            <div class="modal-body">
+                <form id="formComprobantesUpdate" name="formComprobantesUpdate" class="form-horizontal">
+                    <p class="text-primary">Todos los campos son obligatorios.</p>
+                    <div class="form-row">
+                        <div class="form-group col-md-2">
+                            <label for="txtNumeroAsientoUpdate">Número Asiento</label>
+                            <input type="text" class="form-control" id="txtNumeroAsientoUpdate" name="txtNumeroAsiento" required="" disabled>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label for="txtFechaAsientoUpdate">Fecha Asiento</label>
+                            <input type="date" class="form-control" id="txtFechaAsientoUpdate" name="txtFechaAsiento" required="">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label for="listComprobanteUpdate">Tipo de Comprobante</label>
+                            <select class="form-control" id="listComprobanteUpdate" name="listComprobante" required>
+                                <option value="INGRESO">Ingreso</option>
+                                <option value="EGRESO">Egreso</option>
+                                <option value="TRASPASO">Traspaso</option>
+                                <option value="DIARIO">Diario</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label for="listStatusUpdate">Estado</label>
+                            <select class="form-control" id="listStatusUpdate" name="listStatus" required>
+                                <option value="1">Activo</option>
+                                <option value="2">Inactivo</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="txtConceptoOperacionUpdate">Concepto Operación</label>
+                            <input type="text" class="form-control" id="txtConceptoOperacionUpdate" name="txtConceptoOperacion" required="">
+                        </div>
+                    </div>
+                    <div class="table-responsive mt-4">
+                        <table class="table table-bordered" id="detalleTableUpdate">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Nro. Fila</th>
+                                    <th>Código Cuenta</th>
+                                    <th>Nombre Cuenta</th>
+                                    <th>Debe</th>
+                                    <th>Haber</th>
+                                    <th>Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detalleBodyUpdate">
+                                <!-- Aquí se agregarán las filas dinámicamente -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-right"><strong>Totales:</strong></td>
+                                    <td id="totalDebeUpdate">0.00</td>
+                                    <td id="totalHaberUpdate">0.00</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="tile-footer mt-3">
+                        <button id="btnActionFormUpdate" class="btn btn-info" type="submit"><i class="fa fa-fw fa-lg fa-check-circle"></i><span id="btnTextUpdate">Actualizar</span></button>&nbsp;&nbsp;&nbsp;
+                        <button class="btn btn-danger" type="button" data-dismiss="modal"><i class="fa fa-fw fa-lg fa-times-circle"></i>Cerrar</button>
+                    </div>
+                </form>
             </div>
-            <div class="form-group col-md-3">
-              <label for="listComprobanteUpdate">Tipo de Comprobante</label>
-              <select class="form-control" id="listComprobanteUpdate" name="listComprobante" required>
-                <option value="INGRESO">Ingreso</option>
-                <option value="EGRESO">Egreso</option>
-                <option value="TRASPASO">Traspaso</option>
-                <option value="DIARIO">Diario</option>
-              </select>
-            </div>
-            <div class="form-group col-md-3">
-              <label for="listStatusUpdate">Estado</label>
-              <select class="form-control" id="listStatusUpdate" name="listStatus" required>
-                <option value="1">Activo</option>
-                <option value="2">Inactivo</option>
-              </select>
-            </div>
-            <div class="form-group col-md-12">
-              <label for="txtConceptoOperacionUpdate">Concepto Operación</label>
-              <input type="text" class="form-control" id="txtConceptoOperacionUpdate" name="txtConceptoOperacion" required="">
-            </div>
-          </div>
-          <div class="table-responsive mt-4">
-            <table class="table table-bordered" id="detalleTableUpdate">
-              <thead class="thead-dark">
-                <tr>
-                  <th>Nro. Fila</th>
-                  <th>Código Cuenta</th>
-                  <th>Nombre Cuenta</th>
-                  <th>Debe</th>
-                  <th>Haber</th>
-                  <th>Descripción</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody id="detalleBodyUpdate">  
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colspan="3" class="text-right"><strong>Totales:</strong></td>
-                  <td id="totalDebeUpdate">0.00</td>
-                  <td id="totalHaberUpdate">0.00</td>
-                  <td colspan="2"></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-          <button type="button" class="btn btn-success" id="addRowUpdate">Agregar Fila</button>
-          <div class="tile-footer mt-3">
-            <button id="btnActionFormUpdate" class="btn btn-info" type="submit"><i class="fa fa-fw fa-lg fa-check-circle"></i><span id="btnTextUpdate">Actualizar</span></button>&nbsp;&nbsp;&nbsp;
-            <button class="btn btn-danger" type="button" data-dismiss="modal"><i class="fa fa-fw fa-lg fa-times-circle"></i>Cerrar</button>
-          </div>
-        </form>
-      </div>
+        </div>
     </div>
-  </div>
 </div>
+
+
 
 
 

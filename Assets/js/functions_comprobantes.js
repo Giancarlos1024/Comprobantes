@@ -103,9 +103,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             let objData = JSON.parse(request.responseText);
                             if (objData && typeof objData === "object" && objData.hasOwnProperty("status")) {
                                 if (objData.status) {
+                                    // Recargar la tabla de comprobantes
                                     $('#tableComprobantes').DataTable().ajax.reload();
+                                    // Cerrar el modal y resetear el formulario
                                     $('#modalFormComprobantes').modal("hide");
                                     formComprobante.reset();
+            
                                     swal("Comprobante", objData.message || "Comprobante guardado exitosamente.", "success");
                                 } else {
                                     swal("Atención", objData.msg || "Hubo un problema al procesar su solicitud.", "error");
@@ -119,6 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             };
+            
         }
     }
 }, false);
@@ -130,18 +134,28 @@ function openModal() {
     document.querySelector('#titleModal').innerHTML = "Nuevo comprobante";
     document.querySelector("#formComprobantes").reset();
     
+    // Limpiar las filas de la tabla de detalles
+    let detalleBody = document.querySelector('#detalleBody');
+    detalleBody.innerHTML = '';  // Elimina todas las filas de la tabla de detalles
+
+    // Reiniciar los totales de "Debe" y "Haber"
+    document.querySelector('#totalDebe').innerText = '0.00';
+    document.querySelector('#totalHaber').innerText = '0.00';
+
     // Habilitar el campo de número de asiento al abrir el modal para crear uno nuevo
     document.querySelector("#txtNumeroAsiento").disabled = false;
     document.querySelector("#listStatus").disabled = false;
 
+    // Mostrar el modal para crear el nuevo comprobante
     $('#modalFormComprobantes').modal('show');
 }
 
+
 function fntEditInfo(idAsiento) {
-    document.querySelector('#titleModal').innerHTML = "Actualizar Comprobante";
+    document.querySelector('#titleModalUpdate').innerHTML = "Actualizar Comprobante";
     document.querySelector('.modal-header').classList.replace("headerRegister", "headerUpdate");
-    document.querySelector('#btnActionForm').classList.replace("btn-primary", "btn-info");
-    document.querySelector('#btnText').innerHTML = "Actualizar";
+    document.querySelector('#btnActionFormUpdate').classList.replace("btn-primary", "btn-info");
+    document.querySelector('#btnTextUpdate').innerHTML = "Actualizar";
     
     var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
     var ajaxUrl = base_url + '/Comprobantes/getComprobante/' + idAsiento;
@@ -151,25 +165,64 @@ function fntEditInfo(idAsiento) {
         if (request.readyState == 4 && request.status == 200) {
             var objData = JSON.parse(request.responseText);
             if (objData.status) {
-                document.querySelector("#txtNumeroAsiento").value = objData.data.numeroasiento;
-                document.querySelector("#txtFechaAsiento").value = objData.data.fechaAsiento;
-                document.querySelector("#txtConceptoOperacion").value = objData.data.conceptoOperacion;
-                document.querySelector("#listComprobante").value = objData.data.tipocomprobante;
-                document.querySelector("#listStatus").value = objData.data.status;   
+                var data = objData.data;
+                var mainData = data[0];
+                
+                document.querySelector("#txtNumeroAsientoUpdate").value = mainData.numeroasiento;
+                document.querySelector("#txtFechaAsientoUpdate").value = mainData.fechaAsiento;
+                document.querySelector("#txtConceptoOperacionUpdate").value = mainData.conceptoOperacion;
+                document.querySelector("#listComprobanteUpdate").value = mainData.tipocomprobante;
+                document.querySelector("#listStatusUpdate").value = mainData.status;
 
-                // Deshabilitar el campo de número de asiento
-                document.querySelector("#txtNumeroAsiento").disabled = true; 
-                document.querySelector("#listStatus").disabled = true;
+                document.querySelector("#txtNumeroAsientoUpdate").disabled = true;
+                document.querySelector("#listStatusUpdate").disabled = true;
 
-                $('#listComprobante').selectpicker('render');
-                $('#listStatus').selectpicker('render');
-                $('#modalFormComprobantes').modal('show');
+                var lidiarioTableBody = document.querySelector("#detalleBodyUpdate");
+                lidiarioTableBody.innerHTML = '';
+
+                data.forEach(function(ld, index) {
+                    var row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${ld.codigocuenta}</td>
+                        <td>${ld.nombrecuenta}</td>
+                        <td><input type="text" class="form-control debe-input" value="${ld.debe}"></td>
+                        <td><input type="text" class="form-control haber-input" value="${ld.haber}"></td>
+                        <td><input type="text" class="form-control" value="${ld.descripcion}"></td>
+                    `;
+                    lidiarioTableBody.appendChild(row);
+                });
+
+                // Agregar eventos de cambio a los inputs de debe y haber
+                document.querySelectorAll('.debe-input, .haber-input').forEach(function(input) {
+                    input.addEventListener('input', calculateTotalsUpdate);
+                });
+
+                calculateTotalsUpdate();
+
+                $('#modalFormComprobantesUpdate').modal('show');
             } else {
                 swal("Error", objData.msg, "error");
             }
         }
     }
 }
+
+function calculateTotalsUpdate() {
+    var totalDebe = 0;
+    var totalHaber = 0;
+
+    document.querySelectorAll('#detalleBodyUpdate tr').forEach(function(row) {
+        var debe = parseFloat(row.cells[3].querySelector('input').value) || 0;
+        var haber = parseFloat(row.cells[4].querySelector('input').value) || 0;
+        totalDebe += debe;
+        totalHaber += haber;
+    });
+
+    document.querySelector('#totalDebeUpdate').textContent = totalDebe.toFixed(2);
+    document.querySelector('#totalHaberUpdate').textContent = totalHaber.toFixed(2);
+}
+
 
 function fntDeltInfo(idAsiento) {
     swal({
@@ -309,7 +362,7 @@ function updateNombreCuenta(rowIndex) {
 
 // Función para convertir un número en letras (simplificado)
 function numeroALetras(num) {
-    const unidades = ["", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE"];
+    const unidades = ["", "UN", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE"];
     const decenas = ["", "", "VEINTE", "TREINTA", "CUARENTA", "CINCUENTA", "SESENTA", "SETENTA", "OCHENTA", "NOVENTA"];
     const especiales = ["DIEZ", "ONCE", "DOCE", "TRECE", "CATORCE", "QUINCE", "DIECISEIS", "DIECISIETE", "DIECIOCHO", "DIECINUEVE"];
     const centenas = ["", "CIENTO", "DOSCIENTOS", "TRESCIENTOS", "CUATROCIENTOS", "QUINIENTOS", "SEISCIENTOS", "SETECIENTOS", "OCHOCIENTOS", "NOVECIENTOS"];
