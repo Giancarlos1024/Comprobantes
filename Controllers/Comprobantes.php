@@ -257,7 +257,6 @@ class Comprobantes extends Controllers
 		die();
 	}
 	
-	
 	public function setUpdateComprobante()
 	{
 		if ($_POST) {

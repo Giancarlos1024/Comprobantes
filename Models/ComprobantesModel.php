@@ -136,9 +136,10 @@ class ComprobantesModel extends Mysql
         return $request;
     }
     public function selectPlanCuentas() {
-        $sql = "SELECT codigocuenta, nombrecuenta FROM plancuentas";
+        $sql = "SELECT DISTINCT codigocuenta, nombrecuenta FROM plancuentas";
         return $this->select_all($sql);
     }
+    
     
     public function selectComprobante(int $idAsiento)
     {

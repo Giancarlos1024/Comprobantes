@@ -271,7 +271,7 @@ document.querySelector('#addRow').addEventListener('click', function() {
             </select>
         </td>
         <td>
-            <select name="nombreCuenta[]" class="form-control" id="nombreCuentaSelect${existingRows.length}">
+            <select name="nombreCuenta[]" class="form-control" id="nombreCuentaSelect${existingRows.length}" disabled>
                 <option value="">Selecciona Nombre de Cuenta</option>
             </select>
         </td>
@@ -286,13 +286,12 @@ document.querySelector('#addRow').addEventListener('click', function() {
     updateTotals();
 });
 
-// Función para eliminar una fila
 function removeRow(button) {
     let row = button.parentNode.parentNode;
     row.parentNode.removeChild(row);
     updateTotals();
 }
-// Función para actualizar los totales de "Debe" y "Haber"
+
 function updateTotals() {
     let totalDebe = 0;
     let totalHaber = 0;
@@ -303,6 +302,7 @@ function updateTotals() {
     document.querySelector('#totalDebe').innerText = totalDebe.toFixed(2);
     document.querySelector('#totalHaber').innerText = totalHaber.toFixed(2);
 }
+
 function loadCuentaOptions(rowIndex) {
     var request = new XMLHttpRequest();
     var ajaxUrl = base_url + '/Comprobantes/getPlanCuentas'; // Cambia a la ruta correspondiente en tu proyecto
@@ -313,19 +313,30 @@ function loadCuentaOptions(rowIndex) {
         if (request.readyState === 4) {
             if (request.status === 200) {
                 let data = JSON.parse(request.responseText);
+
+                console.log('Datos recibidos:', data);
+
+                // Eliminar duplicados
+                let uniqueData = [...new Map(data.map(item => [item.codigocuenta, item])).values()];
+
+                console.log('Datos únicos:', uniqueData);
+
                 let codigoSelect = document.getElementById(`codigoCuentaSelect${rowIndex}`);
                 let nombreSelect = document.getElementById(`nombreCuentaSelect${rowIndex}`);
                 
-                data.forEach(cuenta => {
+                uniqueData.forEach(cuenta => {
                     let codigoOption = document.createElement('option');
                     codigoOption.value = cuenta.codigocuenta;
                     codigoOption.text = cuenta.codigocuenta;
                     codigoSelect.appendChild(codigoOption);
-                
-                    let nombreOption = document.createElement('option');
-                    nombreOption.value = cuenta.nombrecuenta;
-                    nombreOption.text = cuenta.nombrecuenta;
-                    nombreSelect.appendChild(nombreOption);
+                });
+
+                // Guardar datos en el select para usarlos posteriormente
+                codigoSelect.dataset.cuentas = JSON.stringify(uniqueData);
+
+                // Añadir evento para actualizar nombreCuenta automáticamente
+                codigoSelect.addEventListener('change', function() {
+                    updateNombreCuenta(rowIndex);
                 });
             } else {
                 console.error('Error al cargar cuentas:', request.statusText);
@@ -333,32 +344,31 @@ function loadCuentaOptions(rowIndex) {
         }
     };
 }
+
 function updateNombreCuenta(rowIndex) {
     let codigoSelect = document.getElementById(`codigoCuentaSelect${rowIndex}`);
     let nombreSelect = document.getElementById(`nombreCuentaSelect${rowIndex}`);
     let selectedCodigo = codigoSelect.value;
+    console.log(`Código seleccionado (row ${rowIndex}):`, selectedCodigo);
+    
+    let data = JSON.parse(codigoSelect.dataset.cuentas); // Obtener los datos guardados
+    console.log('Datos para la actualización:', data);
 
-    var request = new XMLHttpRequest();
-    var ajaxUrl = base_url + '/Comprobantes/getPlanCuentas';
-    request.open("GET", ajaxUrl, true);
-    request.send();
+    const cuenta = data.find(item => item.codigocuenta == selectedCodigo); // Utilizar '==' para comparar valores numéricos y cadenas
+    console.log('Cuenta encontrada:', cuenta);
 
-    request.onreadystatechange = function() {
-        if (request.readyState === 4) {
-            if (request.status === 200) {
-                let data = JSON.parse(request.responseText);
-                const cuenta = data.find(item => item.codigocuenta === selectedCodigo);
-                if (cuenta) {
-                    nombreSelect.value = cuenta.nombrecuenta;
-                } else {
-                    nombreSelect.value = '';
-                }
-            } else {
-                console.error('Error al actualizar nombre de cuenta:', request.statusText);
-            }
-        }
-    };
+    if (cuenta) {
+        nombreSelect.innerHTML = `<option value="${cuenta.nombrecuenta}">${cuenta.nombrecuenta}</option>`;
+        nombreSelect.disabled = false; // Habilitar el select de nombre de cuenta
+        console.log(`Nombre de cuenta actualizado (row ${rowIndex}):`, cuenta.nombrecuenta);
+    } else {
+        nombreSelect.innerHTML = '<option value="">Selecciona Nombre de Cuenta</option>';
+        nombreSelect.disabled = true; // Deshabilitar el select de nombre de cuenta si no se encuentra
+        console.log(`Nombre de cuenta no encontrado para el código (row ${rowIndex}):`, selectedCodigo);
+    }
 }
+
+
 
 // Función para convertir un número en letras (simplificado)
 function numeroALetras(num) {
