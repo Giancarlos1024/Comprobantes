@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (formComprobante) {
         formComprobante.onsubmit = function(e) {
             e.preventDefault();
+
             // Verificar si los totales de debe y haber son iguales
             let totalDebe = parseFloat(document.querySelector('#totalDebe').innerText);
             let totalHaber = parseFloat(document.querySelector('#totalHaber').innerText);
@@ -58,27 +59,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;  // Detener el envío del formulario
             }
 
-            // Ocultar mensaje de advertencia si los totales son iguales
-            // document.querySelector('#alertMessage').style.display = 'none';
+            // Verificar si alguna cuenta se repite antes de enviarlo
+            let cuentas = [];
+            let rows = document.querySelectorAll('#detalleBody tr');
+            for (let row of rows) {
+                const codigoCuenta = row.querySelector('select[name="codigoCuenta[]"]').value || "";
+                const nombreCuenta = row.querySelector('select[name="nombreCuenta[]"]').value || "";
 
-            let strNumeroAsiento = document.querySelector('#txtNumeroAsiento').value;
-            let strFechaAsiento = document.querySelector('#txtFechaAsiento').value;
-            let strTipoComprobante = document.querySelector('#listComprobante').value;
-            let intEstadoTransaccion = document.querySelector('#listStatus').value;
-            let strConceptoOperacion = document.querySelector('#txtConceptoOperacion').value;
-            let intIdUsuario = loggedUserId;
+                if (codigoCuenta && nombreCuenta) {
+                    // Crear una clave única para cada par de cuenta y nombre
+                    let cuentaClave = `${codigoCuenta}-${nombreCuenta}`;
 
-            if (!strNumeroAsiento || !intEstadoTransaccion || !strFechaAsiento || !strConceptoOperacion || !strTipoComprobante || !intIdUsuario) {
-                console.error("Error: Todos los campos son obligatorios.");
-                swal("Atención", "Todos los campos son obligatorios.", "error");
-                return false;
+                    // Verificar si la cuenta ya fue procesada
+                    if (cuentas.includes(cuentaClave)) {
+                        swal("Error", "La cuenta con código " + codigoCuenta + " y nombre " + nombreCuenta + " ya ha sido agregada.", "error");
+                        return false;  // Detener el envío del formulario
+                    }
+                    cuentas.push(cuentaClave);  // Agregar al array de cuentas verificadas
+                }
             }
 
+            // Si pasa la validación, enviar el formulario
             divLoading.style.display = "flex";
             let request = new XMLHttpRequest();
             let ajaxUrl = base_url + '/Comprobantes/setComprobante';
             let formData = new FormData(formComprobante);
-            let rows = document.querySelectorAll('#detalleBody tr');
+
             rows.forEach((row, index) => {
                 const codigoCuenta = row.querySelector('select[name="codigoCuenta[]"]').value || "";
                 const nombreCuenta = row.querySelector('select[name="nombreCuenta[]"]').value || "";
@@ -92,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (haber) formData.append(`haber[]`, haber);
                 if (descripcion) formData.append(`descripcion[]`, descripcion);
             });
-            formData.append('idUsuario', intIdUsuario); // Agregar ID de usuario
+            formData.append('idUsuario', loggedUserId); // Agregar ID de usuario
             request.open("POST", ajaxUrl, true);
             request.send(formData);
             request.onreadystatechange = function() {
@@ -122,7 +128,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             };
-            
         }
     }
 }, false);
@@ -222,6 +227,98 @@ function calculateTotalsUpdate() {
     document.querySelector('#totalDebeUpdate').textContent = totalDebe.toFixed(2);
     document.querySelector('#totalHaberUpdate').textContent = totalHaber.toFixed(2);
 }
+
+function sendUpdateComprobante() {
+    var formData = new FormData();
+    
+    // Obtener y validar los elementos antes de acceder a sus valores
+    var idAsientoElem = document.querySelector("#txtIdAsientoUpdate");
+    var numeroAsientoElem = document.querySelector("#txtNumeroAsientoUpdate");
+    var fechaAsientoElem = document.querySelector("#txtFechaAsientoUpdate");
+    var conceptoOperacionElem = document.querySelector("#txtConceptoOperacionUpdate");
+    var tipoComprobanteElem = document.querySelector("#listComprobanteUpdate");
+    var estadoTransaccionElem = document.querySelector("#listStatusUpdate");
+    var idUsuariosElem = document.querySelector("#txtIdUsuariosUpdate");
+
+    // Verificar que todos los elementos necesarios existen
+    if (!idAsientoElem || !numeroAsientoElem || !fechaAsientoElem || !conceptoOperacionElem || !tipoComprobanteElem || !estadoTransaccionElem || !idUsuariosElem) {
+        console.error("Faltan elementos en el DOM");
+        swal("Error", "Faltan elementos en el formulario. Por favor, recargue la página y vuelva a intentarlo.", "error");
+        return;
+    }
+
+    formData.append("idAsiento", idAsientoElem.value);
+    formData.append("numeroAsiento", numeroAsientoElem.value);
+    formData.append("fechaAsiento", fechaAsientoElem.value);
+    formData.append("conceptoOperacion", conceptoOperacionElem.value);
+    formData.append("tipoComprobante", tipoComprobanteElem.value);
+    formData.append("estadoTransaccion", estadoTransaccionElem.value);
+    formData.append("idUsuarios", idUsuariosElem.value);
+
+    // Incluye los detalles del libro diario
+    var details = [];
+    var rows = document.querySelectorAll("#detalleBodyUpdate tr");
+    
+    if (rows.length === 0) {
+        console.error("No hay filas en detalleBodyUpdate");
+        swal("Error", "No hay detalles en el libro diario.", "error");
+        return;
+    }
+
+    rows.forEach(function(row) {
+        var codigocuenta = row.cells[1]?.textContent;
+        var nombrecuenta = row.cells[2]?.textContent;
+        var debeInput = row.cells[3]?.querySelector('input');
+        var haberInput = row.cells[4]?.querySelector('input');
+        var descripcionInput = row.cells[5]?.querySelector('input');
+
+        if (!codigocuenta || !nombrecuenta || !debeInput || !haberInput || !descripcionInput) {
+            console.error("Fila con elementos faltantes en detalleBodyUpdate");
+            swal("Error", "Faltan datos en una de las filas de detalles.", "error");
+            return;
+        }
+
+        var detalle = {
+            codigocuenta: codigocuenta,
+            nombrecuenta: nombrecuenta,
+            debe: debeInput.value,
+            haber: haberInput.value,
+            descripcion: descripcionInput.value
+        };
+        details.push(detalle);
+    });
+
+    if (details.length === 0) {
+        console.error("No se encontraron detalles válidos");
+        swal("Error", "No se encontraron detalles válidos.", "error");
+        return;
+    }
+
+    formData.append("detalles", JSON.stringify(details));
+
+    var request = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+    var ajaxUrl = base_url + '/Comprobantes/setUpdateComprobante';
+    request.open("POST", ajaxUrl, true);
+    request.send(formData);
+    request.onreadystatechange = function() {
+        if (request.readyState == 4 && request.status == 200) {
+            var objData = JSON.parse(request.responseText);
+            if (objData.status) {
+                $('#modalFormComprobantesUpdate').modal("hide");
+                swal("Actualizar", objData.msg, "success");
+                // Recargar o actualizar la tabla de comprobantes si es necesario
+            } else {
+                swal("Error", objData.msg, "error");
+            }
+        }
+    }
+}
+
+
+
+
+
+
 
 
 function fntDeltInfo(idAsiento) {

@@ -72,30 +72,59 @@ class ComprobantesModel extends Mysql
     }
     public function getOrInsertCuenta(int $codigoCuenta, string $nombreCuenta, int $idUsuario) {
         try {
-            error_log("Parámetros recibidos en getOrInsertCuenta: codigoCuenta = $codigoCuenta, nombreCuenta = $nombreCuenta, idUsuario = $idUsuario");
-            $sql = "SELECT idCcontables FROM plancuentas WHERE codigocuenta = ?";
-            $request = $this->select($sql, [$codigoCuenta]);
-            error_log("Consulta para verificar cuenta existente: " . $sql . " | Parámetros: " . json_encode([$codigoCuenta]));
-            if (!empty($request)) {
-                error_log("La cuenta ya existe con idCcontables: " . $request['idCcontables']);
-                return ["status" => true, "idCcontables" => $request['idCcontables']];
+            // Validar que los parámetros no sean nulos o vacíos
+            if ($codigoCuenta === null || $nombreCuenta === null || empty($nombreCuenta) || $idUsuario === null) {
+                error_log("Error: Los parámetros no pueden ser nulos. codigoCuenta: $codigoCuenta, nombreCuenta: '$nombreCuenta', idUsuario: $idUsuario");
+                return ["status" => false, "message" => "Parámetros inválidos. Ningún valor puede ser nulo."];
+            }
+    
+            // Asegurarse de que los parámetros estén correctamente formateados
+            $codigoCuenta = (int) $codigoCuenta;  // Asegura que es un entero
+            $nombreCuenta = trim($nombreCuenta);  // Limpiar espacios en blanco del nombre de la cuenta
+    
+            // Loguear los parámetros recibidos para depuración
+            error_log("Parámetros recibidos en getOrInsertCuenta: codigoCuenta = $codigoCuenta, nombreCuenta = '$nombreCuenta', idUsuario = $idUsuario");
+    
+            // Consulta para verificar si ya existe el registro con el mismo codigocuenta y nombrecuenta
+            $sql = "SELECT idCcontables FROM plancuentas WHERE codigocuenta = ? AND LOWER(TRIM(nombrecuenta)) = LOWER(TRIM(?))";
+    
+            $request = $this->select($sql, [$codigoCuenta, $nombreCuenta]);
+    
+            // Log para mostrar la consulta de verificación
+            error_log("Consulta para verificar cuenta existente: " . $sql . " | Parámetros: " . json_encode([$codigoCuenta, $nombreCuenta]));
+    
+            // Verificar si la respuesta de la consulta está vacía
+            if (empty($request)) {
+                error_log("No se encontró la cuenta con codigocuenta = $codigoCuenta y nombrecuenta = '$nombreCuenta'. Se procederá a la inserción.");
             } else {
+                error_log("Se encontró la cuenta con idCcontables: " . $request[0]['idCcontables']);
+            }
+    
+            // Verificamos si existe el registro
+            if (!empty($request) && isset($request[0]['idCcontables'])) {
+                // Si existe, retornamos el id de la cuenta ya existente y evitamos la inserción
+                error_log("La cuenta ya existe con idCcontables: " . $request[0]['idCcontables']);
+                return ["status" => true, "idCcontables" => $request[0]['idCcontables']];
+            } else {
+                // Si no existe, insertamos la nueva cuenta
                 $status = 1; // Activo
                 $query_insert = "INSERT INTO plancuentas (codigocuenta, nombrecuenta, idUsuario, status, fechaderegistro, fechaactualizacion) 
                                  VALUES (?, ?, ?, ?, NOW(), NOW())";
-                $arrData = array($codigoCuenta, $nombreCuenta, $idUsuario, $status); // Usa la variable para status
+                $arrData = array($codigoCuenta, $nombreCuenta, $idUsuario, $status);
     
                 // Log para verificar la consulta de inserción
                 error_log("Consulta de inserción en plancuentas: " . $query_insert . " | Parámetros: " . json_encode($arrData));
     
+                // Intentamos insertar el registro
                 $request_insert = $this->insert($query_insert, $arrData);
-                
+    
+                // Verificar si la inserción fue exitosa
                 if ($request_insert) {
                     error_log("Cuenta insertada correctamente con idCcontables: " . $request_insert);
                     return ["status" => true, "idCcontables" => $request_insert];
                 } else {
-                    error_log("Error al insertar la cuenta en plancuentas.");
-                    return ["status" => false, "message" => "Error al insertar la cuenta en plancuentas."];
+                    error_log("Error al insertar la cuenta en plancuentas. Puede ser por duplicados.");
+                    return ["status" => false, "message" => "Error al insertar la cuenta en plancuentas. Puede ser por duplicados."];
                 }
             }
         } catch (PDOException $e) {
@@ -205,7 +234,7 @@ public function selectConfiguraEmpresa() {
 
 
 
-    public function updateComprobante($idAsiento, $numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios)
+public function updateComprobante($idAsiento, $numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios)
 {
     try {
         // Comprobación de si el número de asiento está vacío o no se proporciona
@@ -243,6 +272,44 @@ public function selectConfiguraEmpresa() {
         return ["status" => false, "message" => "Error: " . $e->getMessage()];
     }
 }
+public function updateLibroDiarioDetail($idAsiento, $detail)
+{
+    try {
+        // Preparar la consulta de actualización
+        $query_update_detail = "UPDATE librodiario 
+                                SET codigocuenta = ?, nombrecuenta = ?, debe = ?, haber = ?, descripcion = ? 
+                                WHERE idAsiento = ? AND codigocuenta = ?";
+        $arrDataDetail = array(
+            $detail['codigocuenta'],
+            $detail['nombrecuenta'],
+            $detail['debe'],
+            $detail['haber'],
+            $detail['descripcion'],
+            $idAsiento,
+            $detail['codigocuenta']
+        );
+
+        // Log de consulta y parámetros
+        error_log("Consulta detalle: $query_update_detail");
+        error_log("Parámetros detalle: " . json_encode($arrDataDetail));
+
+        // Ejecución de la actualización
+        $request_update_detail = $this->update($query_update_detail, $arrDataDetail);
+
+        // Verificación del resultado de la actualización
+        if ($request_update_detail) {
+            error_log("Detalle del libro diario actualizado correctamente para ID de asiento: $idAsiento.");
+            return ["status" => true, "message" => "Detalle del libro diario actualizado correctamente."];
+        } else {
+            error_log("Error al actualizar el detalle del libro diario para ID de asiento: $idAsiento.");
+            return ["status" => false, "message" => "Error al actualizar el detalle del libro diario."];
+        }
+    } catch (PDOException $e) {
+        error_log("Error en la actualización del detalle del libro diario: " . $e->getMessage());
+        return ["status" => false, "message" => "Error: " . $e->getMessage()];
+    }
+}
+
 
 
 

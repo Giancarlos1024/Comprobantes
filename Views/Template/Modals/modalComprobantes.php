@@ -87,7 +87,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form id="formComprobantesUpdate" name="formComprobantesUpdate" class="form-horizontal">
+                <form id="formComprobantesUpdate" name="formComprobantesUpdate" class="form-horizontal" onsubmit="event.preventDefault(); sendUpdateComprobante();">
                     <p class="text-primary">Todos los campos son obligatorios.</p>
                     <div class="form-row">
                         <div class="form-group col-md-2">
@@ -153,6 +153,8 @@
         </div>
     </div>
 </div>
+
+
 
 
 

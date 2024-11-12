@@ -257,35 +257,80 @@ class Comprobantes extends Controllers
 		die();
 	}
 	
-	public function setUpdateComprobante()
-	{
-		if ($_POST) {
-			// Validación de campos requeridos
-			$requiredFields = ['idAsiento', 'txtNumeroAsiento', 'txtFechaAsiento', 'txtConceptoOperacion', 'listComprobante', 'listStatus'];
-			foreach ($requiredFields as $field) {
-				if (empty($_POST[$field])) {
-					error_log("Error: Faltan datos: " . $field); // Agregado para depuración
-					echo json_encode(array("status" => false, "msg" => 'Faltan datos: ' . $field));
-					die();
-				}
-			}
+	public function updateComprobante()
+{
+    if ($_POST) {
+        $idAsiento = intval($_POST['idAsiento']);
+        $numeroAsiento = strClean($_POST['numeroAsiento']);
+        $fechaAsiento = strClean($_POST['fechaAsiento']);
+        $conceptoOperacion = strClean($_POST['conceptoOperacion']);
+        $tipoComprobante = strClean($_POST['tipoComprobante']);
+        $estadoTransaccion = intval($_POST['estadoTransaccion']);
+        $idUsuarios = intval($_POST['idUsuarios']);
 
-			$idAsiento = intval($_POST['idAsiento']);
-			$strNumeroAsiento = strClean($_POST['txtNumeroAsiento']);
-			$strFechaAsiento = strClean($_POST['txtFechaAsiento']);
-			$strConceptoOperacion = strClean($_POST['txtConceptoOperacion']);
-			$strTipoComprobante = strClean($_POST['listComprobante']);
-			$intEstadoTransaccion = intval($_POST['listStatus']);
-			$intIdUsuario = intval($_POST['idUsuario']);
+        // Log de los datos recibidos
+        error_log("Datos recibidos para actualización: " . print_r($_POST, true));
 
-			// Log de datos antes de la actualización
-			error_log("Actualizando Comprobante ID: $idAsiento con datos: " . json_encode($_POST));
+        $arrResponse = $this->model->updateComprobante($idAsiento, $numeroAsiento, $fechaAsiento, $conceptoOperacion, $tipoComprobante, $estadoTransaccion, $idUsuarios);
 
-			$updateResponse = $this->model->updateComprobante($idAsiento, $strNumeroAsiento, $strFechaAsiento, $strConceptoOperacion, $strTipoComprobante, $intEstadoTransaccion, $intIdUsuario);
-			echo json_encode($updateResponse);
-			die();
-		}
-	}
+        if ($arrResponse['status']) {
+            // Verificar la actualización de los detalles del libro diario
+            $details = json_decode($_POST['details'], true);
+            if ($details) {
+                foreach ($details as $detail) {
+                    $arrResponseDetail = $this->model->updateLibroDiarioDetail($idAsiento, $detail);
+                    if (!$arrResponseDetail['status']) {
+                        // Si hay un error en cualquier detalle, devolver el error
+                        echo json_encode($arrResponseDetail, JSON_UNESCAPED_UNICODE);
+                        die();
+                    }
+                }
+            }
+
+            // Respuesta final de éxito
+            echo json_encode(["status" => true, "message" => "Comprobante y detalles actualizados correctamente."], JSON_UNESCAPED_UNICODE);
+        } else {
+            // Respuesta de error en la actualización del comprobante
+            echo json_encode($arrResponse, JSON_UNESCAPED_UNICODE);
+        }
+    } else {
+        // Respuesta de error si no hay datos POST
+        echo json_encode(["status" => false, "message" => "No se recibieron datos para actualizar."], JSON_UNESCAPED_UNICODE);
+    }
+    die();
+}
+
+	
+
+	// public function setUpdateComprobante()
+	// {
+	// 	if ($_POST) {
+	// 		// Validación de campos requeridos
+	// 		$requiredFields = ['idAsiento', 'txtNumeroAsiento', 'txtFechaAsiento', 'txtConceptoOperacion', 'listComprobante', 'listStatus'];
+	// 		foreach ($requiredFields as $field) {
+	// 			if (empty($_POST[$field])) {
+	// 				error_log("Error: Faltan datos: " . $field); // Agregado para depuración
+	// 				echo json_encode(array("status" => false, "msg" => 'Faltan datos: ' . $field));
+	// 				die();
+	// 			}
+	// 		}
+
+	// 		$idAsiento = intval($_POST['idAsiento']);
+	// 		$strNumeroAsiento = strClean($_POST['txtNumeroAsiento']);
+	// 		$strFechaAsiento = strClean($_POST['txtFechaAsiento']);
+	// 		$strConceptoOperacion = strClean($_POST['txtConceptoOperacion']);
+	// 		$strTipoComprobante = strClean($_POST['listComprobante']);
+	// 		$intEstadoTransaccion = intval($_POST['listStatus']);
+	// 		$intIdUsuario = intval($_POST['idUsuario']);
+
+	// 		// Log de datos antes de la actualización
+	// 		error_log("Actualizando Comprobante ID: $idAsiento con datos: " . json_encode($_POST));
+
+	// 		$updateResponse = $this->model->updateComprobante($idAsiento, $strNumeroAsiento, $strFechaAsiento, $strConceptoOperacion, $strTipoComprobante, $intEstadoTransaccion, $intIdUsuario);
+	// 		echo json_encode($updateResponse);
+	// 		die();
+	// 	}
+	// }
 
 	public function setDeleteComprobante()
 	{
