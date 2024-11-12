@@ -480,13 +480,15 @@ function fntViewInfo(idAsiento) {
             console.log(objData);  // Verifica la respuesta del servidor
 
             if (objData.status) {
-                // Limpiar el cuerpo de la tabla antes de agregar nuevos datos
-                var tableBody = document.querySelector("#comprobanteDetailsBody");
-                tableBody.innerHTML = '';
+                // Limpiar los cuerpos de las tablas antes de agregar nuevos datos
+                var mainTableBody = document.querySelector("#comprobanteMainDetails");
+                var lidiarioTableBody = document.querySelector("#comprobanteLidiarioDetails");
+                mainTableBody.innerHTML = '';
+                lidiarioTableBody.innerHTML = '';
 
-                // Mostrar los detalles principales (sin cambios)
+                // Mostrar los detalles principales
                 var details = [
-                    { label: "ID", value: objData.data[0].idAsiento },  // Accede al primer registro
+                    { label: "ID", value: objData.data[0].idAsiento },
                     { label: "NRO.CBTE", value: objData.data[0].numeroasiento },
                     { label: "FECHA", value: objData.data[0].fechaAsiento },
                     { label: "DETALLE", value: objData.data[0].conceptoOperacion },
@@ -499,34 +501,29 @@ function fntViewInfo(idAsiento) {
                 // Agregar filas estáticas para los detalles principales
                 details.forEach(function(item) {
                     var row = document.createElement("tr");
-                    row.innerHTML = "<td>" + item.label + ":</td><td>" + item.value + "</td>";
-                    tableBody.appendChild(row);
+                    row.innerHTML = "<td><strong>" + item.label + ":</strong></td><td>" + item.value + "</td>";
+                    mainTableBody.appendChild(row);
                 });
 
                 // Verificar si hay registros en lidiario
                 if (Array.isArray(objData.data)) {
                     objData.data.forEach(function(ld) {
-                        // Crear filas para cada registro de lidiario
-                        var rows = [
-                            { label: "Código Cuenta", value: ld.codigocuenta },
-                            { label: "Nombre Cuenta", value: ld.nombrecuenta },
-                            { label: "Debe", value: ld.debe },
-                            { label: "Haber", value: ld.haber },
-                            { label: "Descripción Lidiario", value: ld.descripcion }
-                        ];
-
-                        // Agregar filas para cada uno de los registros de lidiario
-                        rows.forEach(function(item) {
-                            var row = document.createElement("tr");
-                            row.innerHTML = "<td>" + item.label + ":</td><td>" + item.value + "</td>";
-                            tableBody.appendChild(row);
-                        });
+                        // Crear una fila con los datos de cada registro de lidiario
+                        var row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${ld.codigocuenta}</td>
+                            <td>${ld.nombrecuenta}</td>
+                            <td>${ld.debe}</td>
+                            <td>${ld.haber}</td>
+                            <td>${ld.descripcion}</td>
+                        `;
+                        lidiarioTableBody.appendChild(row);
                     });
                 } else {
                     // Si no hay registros de lidiario, muestra un mensaje
                     var row = document.createElement("tr");
-                    row.innerHTML = "<td colspan='2'>No hay registros de Lidiario disponibles.</td>";
-                    tableBody.appendChild(row);
+                    row.innerHTML = "<td colspan='5'>No hay registros de Lidiario disponibles.</td>";
+                    lidiarioTableBody.appendChild(row);
                 }
 
                 // Mostrar el modal
@@ -553,3 +550,4 @@ function fntViewInfo(idAsiento) {
         }
     }
 }
+

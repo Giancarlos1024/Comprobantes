@@ -1,5 +1,5 @@
 <div class="modal fade" id="modalFormComprobantes" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-xl"">
     <div class="modal-content">
       <div class="modal-header headerRegister">
         <h5 class="modal-title" id="titleModal">Nuevo Comprobante</h5>
@@ -161,7 +161,6 @@
 
 
 
-
 <div class="modal fade" id="modalViewComprobante" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -173,7 +172,29 @@
       </div>
       <div class="modal-body">
         <table class="table table-bordered">
-          <tbody id="comprobanteDetailsBody">
+          <thead>
+            <tr>
+              <th>Detalle</th>
+              <th>Valor</th>
+            </tr>
+          </thead>
+          <tbody id="comprobanteMainDetails">
+            <!-- Aquí se agregarán las filas dinámicamente -->
+          </tbody>
+        </table>
+
+        <table class="table table-bordered mt-4">
+          
+          <thead>
+            <tr>
+              <th>Código Cuenta</th>
+              <th>Nombre Cuenta</th>
+              <th>Debe</th>
+              <th>Haber</th>
+              <th>Descripción Lidiario</th>
+            </tr>
+          </thead>
+          <tbody id="comprobanteLidiarioDetails">
             <!-- Aquí se agregarán las filas dinámicamente -->
           </tbody>
         </table>
@@ -184,6 +205,8 @@
     </div>
   </div>
 </div>
+
+
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
